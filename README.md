@@ -1,4 +1,4 @@
-SD2IEC test codes V1.0 for VCPU R1
+# SD2IEC test codes V1.0 for VCPU R1
 
 These programs are designed to test the functions of the VCPU extension.
 
@@ -10,14 +10,14 @@ Subject to this warning, the code may be used in whole or in any parts
 without restriction.
 
 ------------------------------------------------------------------------
-Requirements for compile:
+# Requirements for compile
 
   "The Macroassembler AS" / "asl":
     http://john.ccac.rwth-aachen.de:8000/as/
   Gnu make
 
 ------------------------------------------------------------------------
-Compiling:
+# Compiling
 
 The codes compile to four platform (In order of appearance):
   Commodore VIC20
@@ -55,7 +55,7 @@ make delexec target_platform=c264
 make delexec target_platform=c128
 
 ------------------------------------------------------------------------
-Changelog:
+# Changelog
 
 2021.Oct.11. - 1.0
   Initial release
