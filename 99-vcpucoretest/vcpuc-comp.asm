@@ -27,7 +27,7 @@ phaseaddrlist	ADR	cc_t0			;SysCall test
 		ADR	cc_t21			;LDA+STA ($zp,X) test
 		ADR	cc_t22			;BIT $zp / $uiop tests
 		ADR	cc_t23			;UINDB / UDEDB test
-		ADR	cc_t24			;ATBCD: Convert A register to ASCII decimal chars
+		ADR	cc_t24			;Convert byte value to ASCII decimal chars + decimal digits with converter peripheral
 		ADR	$0000
 ;------------------------------------------------------------------------------
 ;---	Test0: SysCall test
@@ -935,7 +935,8 @@ $$statusdata6	BYT	$ff,lo(dc_t23_p4+2)	;PC LO
 		BYT	$ff,0			;COMMAND
 		BYT	$00,$00			;LASTOPCODE
 ;------------------------------------------------------------------------------
-;---	Test24: ATBCD: Convert A register to ASCII decimal chars
+;---	Test24: Convert byte value to ASCII decimal chars + decimal digits
+;---	  with converter peripheral
 
 cc_t24		BYT	def_job_download
 		ADR	dc_test24_codeend - dc_test24_codestart		;BYTEno
@@ -957,6 +958,12 @@ $$checkdata	BYT	"000"
 		BYT	"099"
 		BYT	"100"
 		BYT	"255"
+		BYT	0,0,0
+		BYT	0,0,9
+		BYT	0,1,0
+		BYT	0,9,9
+		BYT	1,0,0
+		BYT	2,5,5
 ;------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------

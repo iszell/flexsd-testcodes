@@ -11,7 +11,7 @@
 	INCLUDE	"benchmark-drive.inc"
 ;------------------------------------------------------------------------------
 		jsr	rom_primm
-		BYT	ascii_return,ascii_return,"SD2IEC MEGABYTES READ BENCHMARK:",0
+		BYT	ascii_return,"SD2IEC MEGABYTES READ BENCHMARK:",0
 		jsr	sd2i_scanning_bus
 		sta	z_fa				;Set SD2IEC Unit No
 		cmp	#0				;Any SD2IEC on the bus?

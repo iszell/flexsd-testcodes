@@ -1165,43 +1165,72 @@ dc_test23_codeend	=	* - def_offset
 	SHARED	dc_t23_p3
 	SHARED	dc_t23_p4
 ;------------------------------------------------------------------------------
-;---	Test24: ATBCD: Convert A register to ASCII decimal chars
+;---	Test24: Convert byte value to ASCII decimal chars + decimal digits
+;---	  with converter peripheral
 
 dc_test24_codestart	=	* - def_offset
 	PHASE	def_drivecodestart
 dc_t24_start
+		ldsph	hi(def_drivecodestart)
+		ldy	#0
+
 		lda	#0
-		btasc
-		sty	dc_t24_results+0
-		stx	dc_t24_results+1
-		sta	dc_t24_results+2
+		sta	vcpu_bin2ascii
+		jsr	dc_t24_storeresult
 		lda	#9
-		btasc
-		sty	dc_t24_results+3
-		stx	dc_t24_results+4
-		sta	dc_t24_results+5
+		sta	vcpu_bin2ascii
+		jsr	dc_t24_storeresult
 		lda	#10
-		btasc
-		sty	dc_t24_results+6
-		stx	dc_t24_results+7
-		sta	dc_t24_results+8
+		sta	vcpu_bin2ascii
+		jsr	dc_t24_storeresult
 		lda	#99
-		btasc
-		sty	dc_t24_results+9
-		stx	dc_t24_results+10
-		sta	dc_t24_results+11
+		sta	vcpu_bin2ascii
+		jsr	dc_t24_storeresult
 		lda	#100
-		btasc
-		sty	dc_t24_results+12
-		stx	dc_t24_results+13
-		sta	dc_t24_results+14
+		sta	vcpu_bin2ascii
+		jsr	dc_t24_storeresult
 		lda	#255
-		btasc
-		sty	dc_t24_results+15
-		stx	dc_t24_results+16
-		sta	dc_t24_results+17
+		sta	vcpu_bin2ascii
+		jsr	dc_t24_storeresult
+		lda	#0
+		sta	vcpu_bin2decimal
+		jsr	dc_t24_storeresult
+		lda	#9
+		sta	vcpu_bin2decimal
+		jsr	dc_t24_storeresult
+		lda	#10
+		sta	vcpu_bin2decimal
+		jsr	dc_t24_storeresult
+		lda	#99
+		sta	vcpu_bin2decimal
+		jsr	dc_t24_storeresult
+		lda	#100
+		sta	vcpu_bin2decimal
+		jsr	dc_t24_storeresult
+		lda	#255
+		sta	vcpu_bin2decimal
+		jsr	dc_t24_storeresult
 		break	def_exitcode
+
+dc_t24_storeresult
+		lda	vcpu_bin2resulth
+		sta	dc_t24_results,y
+		iny
+		lda	vcpu_bin2resultm
+		sta	dc_t24_results,y
+		iny
+		lda	vcpu_bin2resultl
+		sta	dc_t24_results,y
+		iny
+		rts
+
 dc_t24_results	BYT	0,0,0
+		BYT	0,0,0
+		BYT	0,0,0
+		BYT	0,0,0
+		BYT	0,0,0
+		BYT	0,0,0
+		BYT	0,0,0
 		BYT	0,0,0
 		BYT	0,0,0
 		BYT	0,0,0

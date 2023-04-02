@@ -9,7 +9,7 @@
 	INCLUDE	"../common/header.asm"
 ;------------------------------------------------------------------------------
 		jsr	rom_primm
-		BYT	ascii_return,ascii_return,"SHOW SD2IEC VCPU MEM:",ascii_return,0
+		BYT	"SHOW SD2IEC VCPU MEM:",ascii_return,0
 
 		jsr	sd2i_scanning_bus
 		sta	z_fa				;Set SD2IEC Unit No

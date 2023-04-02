@@ -4,7 +4,7 @@
 sd2i_printlongversion
 
 		jsr	rom_primm
-		BYT	ascii_return,"LONG VERSION:",ascii_return,0
+		BYT	ascii_return,"LONG VERSION: ",0
 
 		ldx	#lo($$commstr)
 		ldy	#hi($$commstr)

@@ -2,22 +2,25 @@
 ;---	SD2IEC test codes
 ;---	©2021.08.28.+ by BSZ
 ;---	Handle Disk Images, AutoSwap, drive side
+;---	©2023.03.18. Bin to dec conversion modification
 ;------------------------------------------------------------------------------
 	INCLUDE "../common/def6502.asm"
 	INCLUDE	"../common/vcpumacros-asl.asm"
 ;------------------------------------------------------------------------------
 drivecode_start		=	$0200
 drivecode_zptr		=	drivecode_start + $000
-drivecode_sptr		=	drivecode_start + $100
+;drivecode_sptr		=	drivecode_start + $100
 
 channelno		=	2
 
 ;------------------------------------------------------------------------------
 	ORG	drivecode_start
-
+		BYT	[16]0				;Stack location
+stack_top
+drivecode_go
 		ucldl					;CLK + DAT to Low, BUSY
-		ldsph	hi(drivecode_sptr)		;Set SPH
-		ldx	#$ff
+		ldsph	hi(stack_top)			;Set SPH
+		ldx	#lo(stack_top)
 		txs					;Set SP
 
 		jsr	setautoswap			;Select "AUTOSWAP.LST" file
@@ -200,14 +203,15 @@ $$error		rts
 ;---	A <- Tr
 ;---	X <- Sec
 
-readsector	pha
-		txa
-		btasc					;Convert "Sec" to ASCII string
+readsector	stx	vcpu_bin2ascii			;Convert "Sec" to ASCII string
+		ldx	vcpu_bin2resultm		;Read "Middle" digit in ASCII char
 		stx	$$blrdstr_sc+0
-		sta	$$blrdstr_sc+1
-		pla
-		btasc					;Convert "Tr" to ASCII string
-		stx	$$blrdstr_tr+0
+		ldx	vcpu_bin2resultl		;Read "Low" digit in ASCII char
+		stx	$$blrdstr_sc+1
+		sta	vcpu_bin2ascii			;Convert "Tr" to ASCII string
+		lda	vcpu_bin2resultm		;Read "Middle" digit in ASCII char
+		sta	$$blrdstr_tr+0
+		lda	vcpu_bin2resultl		;Read "Low" digit in ASCII char
 		sta	$$blrdstr_tr+1
 
 		ldzph	hi($$blrdstr)
@@ -263,4 +267,5 @@ _resultlength	BYT	0
 _results
 ;------------------------------------------------------------------------------
 	SHARED	drivecode_start
+	SHARED	drivecode_go
 ;------------------------------------------------------------------------------

@@ -11,7 +11,7 @@
 	INCLUDE	"autoswap-drive.inc"
 ;------------------------------------------------------------------------------
 		jsr	rom_primm
-		BYT	ascii_return,ascii_return,"SD2IEC DISK IMAGES / AUTOSWAP:",ascii_return,0
+		BYT	ascii_return,"SD2IEC DISK IMAGES / AUTOSWAP:",ascii_return,0
 
 		jsr	sd2i_scanning_bus
 		sta	z_fa				;Set SD2IEC Unit No
@@ -37,8 +37,8 @@ $$vcpuready	jsr	rom_primm
 
 		jsr	rom_primm
 		BYT	ascii_return,"START CODE IN DRV",0
-		ldx	#lo(drivecode_start)
-		ldy	#hi(drivecode_start)
+		ldx	#lo(drivecode_go)
+		ldy	#hi(drivecode_go)
 		jsr	sd2i_execmemory_simple
 
 		jsr	rom_primm

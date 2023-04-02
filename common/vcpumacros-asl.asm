@@ -44,6 +44,13 @@ vcpu_iobase		=	$fe00
 vcpu_version		=	vcpu_iobase + $00
 vcpu_unitno		=	vcpu_iobase + $01
 vcpu_hid		=	vcpu_iobase + $02
+vcpu_b2dconverter	=	vcpu_iobase + $07
+vcpu_bin2decimal	=	vcpu_b2dconverter + 0
+vcpu_bin2ascii		=	vcpu_b2dconverter + 1
+vcpu_bin2result		=	vcpu_b2dconverter + 0
+vcpu_bin2resultl	=	vcpu_bin2result + 0
+vcpu_bin2resultm	=	vcpu_bin2result + 1
+vcpu_bin2resulth	=	vcpu_bin2result + 2
 vcpu_atnsrqout		=	vcpu_iobase + $0a
 vcpu_atnsrqin		=	vcpu_iobase + $0b
 vcpu_clkdatout		=	vcpu_iobase + $0c
@@ -87,7 +94,7 @@ ldsph	MACRO	addrhi
 
 ;	Binary to decimal ASCII chars:
 btasc	MACRO
-		BYT	$e2
+    ERROR "`BTASC` command deprecated. Use the converter peripheral instead."
 	ENDM
 
 ;===	µOp codes:

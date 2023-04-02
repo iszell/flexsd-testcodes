@@ -23,7 +23,7 @@ def_memok	set	"Y"
     ENDIF
 ;------------------------------------------------------------------------------
 		jsr	rom_primm
-		BYT	ascii_return,ascii_return,"VCPU CORE TESTS:",ascii_return,0
+		BYT	ascii_return,"VCPU CORE TESTS:",ascii_return,0
 
 		jsr	sd2i_scanning_bus
 		sta	z_fa				;Set SD2IEC Unit No

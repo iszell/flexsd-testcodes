@@ -11,7 +11,7 @@
 	INCLUDE	"printio-drive.inc"
 ;------------------------------------------------------------------------------
 		jsr	rom_primm
-		BYT	ascii_return,ascii_return,"PRINT SD2IEC VCPU I/O:",ascii_return,0
+		BYT	"PRINT SD2IEC VCPU I/O:",ascii_return,0
 
 		jsr	sd2i_scanning_bus
 		sta	z_fa				;Set SD2IEC Unit No

@@ -11,7 +11,7 @@
 	INCLUDE	"sr2b-usr-drive.inc"
 ;------------------------------------------------------------------------------
 		jsr	rom_primm
-		BYT	ascii_return,ascii_return,ascii_return,ascii_return,ascii_return
+		BYT	ascii_return,ascii_return,ascii_return,ascii_return
 		BYT	ascii_return,ascii_return,"SD2IEC SEND+RECV 2BIT:"
 		BYT	ascii_return,"USND2/URCV2 COMMANDS, PREFERRED METHOD",ascii_return,0
 

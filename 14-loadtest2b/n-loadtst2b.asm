@@ -11,7 +11,7 @@
 	INCLUDE	"loadtst2b-drive.inc"
 ;------------------------------------------------------------------------------
 		jsr	rom_primm
-		BYT	ascii_return,ascii_return,ascii_return,ascii_return
+		BYT	ascii_return,ascii_return,ascii_return
 		BYT	ascii_return,ascii_return,ascii_return,ascii_return
 		BYT	ascii_return,ascii_return,"SD2IEC MEGABYTES LOAD TEST, 2BIT:",0
 		jsr	sd2i_scanning_bus

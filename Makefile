@@ -31,22 +31,16 @@ SAMPLES = $(wildcard ??-*)
 
 all:
 	for ACTUAL in $(SAMPLES); do \
-	  cd $$ACTUAL; \
-	  make PLATFORM=$(PLATFORM); \
-	  make copy PLATFORM=$(PLATFORM); \
-	  cd ..; \
+	  ( $(MAKE) -C $$ACTUAL PLATFORM=$(PLATFORM) ) || exit $$?; \
+	  ( $(MAKE) -C $$ACTUAL copy PLATFORM=$(PLATFORM) ) || exit $$?; \
 	done
 
 clean:
 	for ACTUAL in $(SAMPLES); do \
-	  cd $$ACTUAL; \
-	  make clean PLATFORM=$(PLATFORM); \
-	  cd ..; \
+	  $(MAKE) -C $$ACTUAL clean PLATFORM=$(PLATFORM); \
 	done
 
 delexec:
 	for ACTUAL in $(SAMPLES); do \
-	  cd $$ACTUAL; \
-	  make delexec PLATFORM=$(PLATFORM); \
-	  cd ..; \
+	  $(MAKE) -C $$ACTUAL delexec PLATFORM=$(PLATFORM); \
 	done

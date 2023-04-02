@@ -12,7 +12,7 @@
 	INCLUDE	"sr1b-ure-drive.inc"
 ;------------------------------------------------------------------------------
 		jsr	rom_primm
-		BYT	ascii_return,ascii_return,ascii_return,ascii_return,ascii_return
+		BYT	ascii_return,ascii_return,ascii_return,ascii_return
 		BYT	ascii_return,ascii_return,"SD2IEC SEND+RECV 1BIT:"
 		BYT	ascii_return,"UDTTA/UATDT COMMANDS, PREFERRED METHOD"
 		BYT	ascii_return,"REVERSE BIT ORDER",ascii_return,0

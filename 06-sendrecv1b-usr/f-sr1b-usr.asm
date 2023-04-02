@@ -11,7 +11,7 @@
 	INCLUDE	"sr1b-usr-drive.inc"
 ;------------------------------------------------------------------------------
 		jsr	rom_primm
-		BYT	ascii_return,ascii_return,ascii_return,ascii_return,ascii_return
+		BYT	ascii_return,ascii_return,ascii_return,ascii_return
 		BYT	ascii_return,ascii_return,"SD2IEC SEND+RECV 1BIT:"
 		BYT	ascii_return,"USND1/URCV1 COMMANDS, PREFERRED METHOD",ascii_return,0
 

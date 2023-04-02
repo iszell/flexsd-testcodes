@@ -11,7 +11,7 @@
 	INCLUDE	"recvtime1b-drive.inc"
 ;------------------------------------------------------------------------------
 		jsr	rom_primm
-		BYT	ascii_return,ascii_return,ascii_return,ascii_return,ascii_return
+		BYT	ascii_return,ascii_return,ascii_return,ascii_return
 		BYT	ascii_return,ascii_return,"SD2IEC RECV TIME 1BIT:"
 		BYT	ascii_return,"USND1 COM., BYTES:",0
 		ldx	#lo(def_blockno1)
