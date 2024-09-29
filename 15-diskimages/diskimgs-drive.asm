@@ -19,8 +19,8 @@ channelno		=	2
 stack_top
 drivecode_go
 		ucldl					;CLK + DAT to Low, BUSY
-		ldsph	hi(stack_top)			;Set SPH
-		ldx	#lo(stack_top)
+		ldsph	hi(stack_top-1)			;Set SPH
+		ldx	#lo(stack_top-1)
 		txs					;Set SP
 
 		jsr	changedisk_d1			;CD TestDisk #1
@@ -227,7 +227,7 @@ readsector	stx	vcpu_bin2ascii			;Convert "Sec" to ASCII string
 		ldzph	hi($$blrdstr)
 		ldy	#lo($$blrdstr)
 		ldx	#$$blrdstr_e - $$blrdstr
-		break	vcpu_syscall_directcommand_mem	;Change dir to TestDisk1
+		break	vcpu_syscall_directcommand_mem	;Read sector
 		jmp	store_result_if_nook
 
 $$blrdstr	BYT	"U1 "			;Command: Read block

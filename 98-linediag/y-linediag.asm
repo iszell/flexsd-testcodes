@@ -3,6 +3,7 @@
 ;---	©2021.08.04.+ by BSZ
 ;---	Line diagnostics - computer side
 ;------------------------------------------------------------------------------
+	INCLUDE	"_tempsyms_.inc"		;platform/name defines, generated / deleted automatically
 	INCLUDE "../common/def6502.asm"
 	INCLUDE	"../common/defines.asm"
 ;------------------------------------------------------------------------------
@@ -48,10 +49,16 @@ $$vcpuready	jsr	rom_primm
 
 		jsr	rom_primm
 		BYT	ascii_return,"READ BACK RESULTS",0
-		jsr	read_errorchannel
+		ldx	#lo(_measvalues)
+		ldy	#hi(_measvalues)	;Results stored here
+		lda	#100			;error buffer size = 100, max no of BYTEs
+		jsr	sd2i_recvanswer
+		sty	_recvlength		;Save received data length
+		cpy	#48			;48 BYTEs received? (For FAST SERIAL: incl. SRQ line data)
+		beq	$$lengthok
 		cpy	#36			;36 BYTEs received?
 		bne	$$maybeerror
-		lda	_measvalues+0
+$$lengthok	lda	_measvalues+0
 		and	#%11110000
 		cmp	#'0'
 		bne	$$printvalues
@@ -63,7 +70,15 @@ $$vcpuready	jsr	rom_primm
 		cmp	#','
 		bne	$$printvalues
 $$maybeerror	jsr	rom_primm
-		BYT	ascii_return,ascii_return,"MAYBE ERROR?",0
+		BYT	ascii_return,ascii_return,"MAYBE ERROR? RCV.STR:",ascii_return,0
+		ldx	#0
+$$errorprint	lda	_measvalues,x
+		cmp	#ascii_return
+		beq	$$printvalues
+		jsr	rom_bsout
+		inx
+		cpx	_recvlength
+		bne	$$errorprint
 
 $$printvalues	jsr	rom_primm
 		BYT	ascii_return,ascii_return,"  RESULTS:"
@@ -76,32 +91,20 @@ $$printvalues	jsr	rom_primm
 		jsr	rom_primm
 		BYT	ascii_return,"ATN:",0
 		jsr	print12byte
-
+		lda	_recvlength
+		cmp	#48			;SRQ data present?
+		bne	$$nosrq
 		jsr	rom_primm
+		BYT	ascii_return,"SRQ:",0
+		jsr	print12byte
+
+$$nosrq		jsr	rom_primm
 		BYT	ascii_return,0
-$$exit		rts
+$$exit		jmp	program_exit
 
 ;	Previously compiled drivecode binary:
-$$drivecode	BINCLUDE "linediag-drive.prg"
+$$drivecode	BINCLUDE "linediag-drive.bin"
 $$drivecode_end
-
-;	Read back results:
-read_errorchannel
-		lda	#%00000000
-		sta	z_status
-		lda	z_fa			;Unit No
-		jsr	rom_talk
-		lda	#$6f			;Error channel
-		sta	z_sa
-		jsr	rom_tksa
-		ldy	#0
-$$readdata	bit	z_status
-		bvs	$$dataend
-		jsr	rom_acptr
-		sta	_measvalues,y
-		iny
-		bne	$$readdata
-$$dataend	jmp	rom_untlk
 
 ;	Display 12 BYTE:
 ;	Y <- Start index
@@ -118,6 +121,8 @@ $$nospace	lda	_measvalues,y
 		cpx	#12
 		bne	$$printcycle
 		rts
+
+_recvlength	BYT	0
 ;------------------------------------------------------------------------------
 displaylevel	set	1
 	INCLUDE	"../common/commerrchannel.asm"

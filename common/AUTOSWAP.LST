@@ -1,2 +1,5 @@
+; autoswap file for vcpu tests, do not edit
 vcputstdsk1.d64
 vcputstdsk2.d64
+vcputst40trk.d64
+/

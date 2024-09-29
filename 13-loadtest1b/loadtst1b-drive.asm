@@ -2,9 +2,14 @@
 ;---	SD2IEC test codes
 ;---	©2021.08.12.+ by BSZ
 ;---	File Load test, 1bit, drive side
+;---	240325+: Testfile changed
 ;------------------------------------------------------------------------------
 	INCLUDE "../common/def6502.asm"
 	INCLUDE	"../common/vcpumacros-asl.asm"
+;------------------------------------------------------------------------------
+;---	Actual testfile
+	INCLUDE	"../common/len_chks.asm"
+megafile_name	=	meg1file_name
 ;------------------------------------------------------------------------------
 drivecode_start		=	$0200
 drivecode_zptr		=	drivecode_start + $100
@@ -139,7 +144,7 @@ $$ncy		rts
 ;------------------------------------------------------------------------------
 _checksum	BYT	0,0,0
 _length		BYT	0,0,0
-_filename	BYT	"TSTDAT2M*,R",0
+_filename	BYT	megafile_name,"*,R",0
 ;------------------------------------------------------------------------------
 	SHARED	drivecode_start
 	SHARED	drivecode_go

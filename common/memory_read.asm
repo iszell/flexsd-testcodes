@@ -50,8 +50,10 @@ $$memrdcyc	jsr	$$getblocksize
 		lda	$$drvmemaddr+1
 		jsr	rom_ciout
 		lda	$$blocksize
-		jsr	rom_ciout		;"ZW" + VCPU (source) address + length
+		jsr	rom_ciout		;"ZR" + VCPU (source) address + length
 		jsr	rom_unlsn
+		lda	#%00000000
+		sta	z_status
 		lda	z_fa			;Unit No
 		jsr	rom_talk
 		lda	#$6f			;Answer from error channel
@@ -64,11 +66,17 @@ $$readdatacyc	bit	z_status
 $$writeaddr	sta	$ffff,y
 		iny
 		bne	$$readdatacyc
-$$dataend	jsr	rom_untlk
+$$dataend	cpy	$$blocksize
+		bne	$$datasizeerror
+		jsr	rom_untlk
 		jsr	$$addcompaddr
 		jsr	$$adddrvaddr
 		jmp	$$memrdcyc
 $$memrdend	rts
+
+$$datasizeerror	jsr	rom_primm
+		BYT	ascii_return,"ERROR: MISSING BYTES!",ascii_return,0
+		rts
 
 ;	Read parameter from table:
 $$paramread	lda	$ffff,x

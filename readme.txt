@@ -1,9 +1,10 @@
-SD2IEC test codes V1.1.x for VCPU R1
+SD2IEC test codes V1.3.x for VCPU R1/R2
 
 These programs are designed to test the functions of the VCPU extension.
 This extension is available in the FlexSD firmware (which is a sd2iec
 fork):
 
+  https://bsz.siz.hu/SD2IEC-FlexSD/
   http://bsz.amigaspirit.hu/SD2IEC-FlexSD/
 
 This program is distributed in the hope that it will be useful,
@@ -58,22 +59,5 @@ make delexec target_platform=vic20
 make delexec target_platform=c64
 make delexec target_platform=c264
 make delexec target_platform=c128
-
-------------------------------------------------------------------------
-Changelog:
-
-2023.Mar.20. - 1.1.0
-  BTASC VCPU command deprecated
-  "vcpumacros.asl" modified (remove BTASC, add converter peripheral)
-  "o-diskimgs", "p-autoswap", "z-vcputst" modified
-  "checkvcpusupport" extended (bus type, I/O size)
-  Put ID string to all executable
-  Main makefile modified: stop on sub-make error
-2021.Nov.20. - 1.0.2
-  "q-benchmark" modified
-2021.Nov.20. - 1.0.1
-  "vcpumacros.asl", "q-benchmark" modified
-2021.Oct.11. - 1.0
-  Initial release
 
 ------------------------------------------------------------------------

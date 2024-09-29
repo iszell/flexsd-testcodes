@@ -11,5 +11,10 @@ file5_chks	=	$47a90f
 file6_length	=	53248
 file6_chks	=	$67aad2
 
-megafile_length	=	$200000
-megafile_chks	=	$ed3a20
+;meg2file_name	=	"TSTDAT2M"
+;meg2file_length =	$200000
+;meg2file_chks	=	$ed3a20
+
+meg1file_name	=	"TSTDAT1M"
+meg1file_length	=	$100000
+meg1file_chks	=	$f85a88

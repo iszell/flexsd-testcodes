@@ -2,7 +2,9 @@
 ;---	SD2IEC test codes
 ;---	©2021.08.28.+ by BSZ
 ;---	Handle Disk Images, AutoSwap, computer side
+;---	©2024.01.17. Image number check
 ;------------------------------------------------------------------------------
+	INCLUDE	"_tempsyms_.inc"		;platform/name defines, generated / deleted automatically
 	INCLUDE "../common/def6502.asm"
 	INCLUDE	"../common/defines.asm"
 ;------------------------------------------------------------------------------
@@ -29,7 +31,7 @@ $$sd2iecpresent	jsr	rom_primm
 		bcc	$$vcpuready
 		jmp	$$exit
 $$vcpuready	jsr	rom_primm
-		BYT	" OK",ascii_return,"DOWNLOAD CODE TO DRV",0
+		BYT	ascii_return,"DOWNLOAD CODE TO DRV",0
 		jsr	sd2i_writememory
 		ADR	_drivecode
 		ADR	_drivecode_end-_drivecode
@@ -56,11 +58,21 @@ $$vcpuready	jsr	rom_primm
 		sta	_filedatapos
 
 		jsr	rom_primm
+		BYT	ascii_return,"DISABLE AUTOSWAP FILE",0
+		jsr	printokerror
+		jsr	rom_primm
+		BYT	ascii_return,"INCORRECT SELECTION CHECK",0
+		lda	#2
+		jsr	printselecterr
+
+		jsr	rom_primm
 		BYT	ascii_return,"SET AUTOSWAP FILE",0
 		jsr	printokerror
 		jsr	rom_primm
 		BYT	ascii_return,"SELECT #1 .D64",0
 		jsr	printokerror
+		lda	#0
+		jsr	printswaplineno
 		jsr	rom_primm
 		BYT	ascii_return,"OPEN CHANNEL",0
 		jsr	printokerror
@@ -71,6 +83,8 @@ $$vcpuready	jsr	rom_primm
 		jsr	rom_primm
 		BYT	ascii_return,"SELECT #2 .D64",0
 		jsr	printokerror
+		lda	#1
+		jsr	printswaplineno
 		jsr	rom_primm
 		BYT	ascii_return,"OPEN CHANNEL",0
 		jsr	printokerror
@@ -80,16 +94,19 @@ $$vcpuready	jsr	rom_primm
 		jsr	printfiledata
 
 		jsr	rom_primm
+		BYT	ascii_return,"SELECT INVALID SWAPLINE",0
+		lda	#0
+		jsr	printinvlineresult
+
+		jsr	rom_primm
 		BYT	ascii_return,"CHANGE DIR BACK",0
 		jsr	printokerror
 
-		jsr	rom_primm
-		BYT	ascii_return,0
-$$exit		rts
+$$exit		jmp	program_exit
 
 ;---	Print OK/ERROR
 printokerror	jsr	getbytefromresults
-		bcs	$$error_nodata
+		bcs	printerrornodat
 		bne	$$error_number
 		jsr	rom_primm
 		BYT	" OK",0
@@ -104,11 +121,64 @@ $$error_number	jsr	rom_primm
 		pla				;Drop return address
 		rts
 
-$$error_nodata	jsr	rom_primm
+;---	Print Swapfile lineno:
+;---	A <- requested lineno:
+printswaplineno	sta	$$linecheck+1
+		jsr	getbytefromresults
+		bcs	printerrornodat
+		pha
+		jsr	rom_primm
+		BYT	" (IMG #",0
+		jsr	mon_puthex
+		pla
+$$linecheck	cmp	#$ff			;<- modified
+		bne	$$wrongline
+		jsr	rom_primm
+		BYT	")",0
+		rts
+
+$$wrongline	jsr	rom_primm
+		BYT	" <- ERROR!)",ascii_return,0
+		pla
+		pla				;Drop return address
+		rts
+
+;---	Missing data:
+printerrornodat	jsr	rom_primm
 		BYT	" ERROR (NO DATA)",ascii_return,0
 		pla
 		pla				;Drop return address
 		rts
+
+;---	Print invalid image select results:
+;---	A <- expected swapfile line no
+printselecterr
+
+;---	Print invalid swapfile line result:
+;---	A <- expected swapfile line no
+printinvlineresult
+		sta	$$imagelineno+1
+		jsr	getbytefromresults
+		bcs	printerrornodat
+		tax
+		jsr	getbytefromresults
+		bcs	printerrornodat
+		tay
+		cpx	#$ff
+		bne	$$notgood
+$$imagelineno	cpy	#$00
+		bne	$$notgood
+		jsr	rom_primm
+		BYT	" OK (",0
+		jmp	$$printnumbers
+$$notgood	jsr	rom_primm
+		BYT	" ERROR (",0
+$$printnumbers	txa
+		jsr	mon_puthex
+		tya
+		jsr	mon_puthex
+		lda	#')'
+		jmp	rom_bsout
 
 ;---	Print one file data:
 printfiledata	jsr	rom_primm
@@ -247,15 +317,15 @@ _resultspos	BYT	0
 waitdrive	lda	#%11111111
 		sta	$$state
 $$waitcycle
-    IF target_platform = 20
+    IF target_platform == 20
 		lda	$911f			;VIA1 DRA
 		and	#%00000011
 		cmp	#%00000011
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		lda	$dd00			;CIA port for handle serial lines
 		and	#%11000000
 		cmp	#%11000000		;DAT+CLK = high?
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		lda	$01			;CPU port for handle serial lines
 		and	#%11000000
 		cmp	#%11000000		;DAT+CLK = high?
@@ -271,7 +341,7 @@ $$waitcont	cmp	$$state
 $$state		BYT	0
 ;------------------------------------------------------------------------------
 ;	Previously compiled drivecode binary:
-_drivecode	BINCLUDE "autoswap-drive.prg"
+_drivecode	BINCLUDE "autoswap-drive.bin"
 _drivecode_end
 ;------------------------------------------------------------------------------
 displaylevel	set	1

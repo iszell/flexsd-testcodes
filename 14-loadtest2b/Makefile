@@ -1,27 +1,28 @@
-AS = ../common/ass.sh
+ASP = ../common/assp.sh
+ASB = ../common/assb.sh
 
 PRGNAME = n-loadtst2b
 DRVNAME = loadtst2b-drive
-TSTDTFL = tstdat2m.seq
+TSTDTFL = tstdat1m.seq
 
 ifndef PLATFORM
 $(error PLATFORM not set)
 endif
 
-all: $(DRVNAME).prg $(PRGNAME)-$(PLATFORM).prg
+all: $(DRVNAME).bin $(PRGNAME)-$(PLATFORM).prg
 
-$(DRVNAME).prg: *.asm
-	$(AS) $(DRVNAME)
+$(DRVNAME).bin: *.asm
+	$(ASB) $(DRVNAME)
 
-$(PRGNAME)-$(PLATFORM).prg: $(DRVNAME).prg
-	$(AS) $(PRGNAME) $(PLATFORM)
+$(PRGNAME)-$(PLATFORM).prg: $(DRVNAME).bin
+	$(ASP) $(PRGNAME) $(PLATFORM)
 	mv $(PRGNAME).prg $(PRGNAME)-$(PLATFORM).prg
 	cp $(PRGNAME)-$(PLATFORM).prg $(PRGNAME)-$(PLATFORM)
 	mv $(PRGNAME).lst $(PRGNAME)-$(PLATFORM).lst
 
 clean:
 	rm -f $(PRGNAME)-$(PLATFORM).prg $(PRGNAME)-$(PLATFORM).lst $(PRGNAME).inc *-$(PLATFORM)
-	rm -f $(DRVNAME).prg $(DRVNAME).lst $(DRVNAME).inc
+	rm -f $(DRVNAME).bin $(DRVNAME).lst $(DRVNAME).inc
 
 copy: $(PRGNAME)-$(PLATFORM)
 	mkdir -p ../target-$(PLATFORM)

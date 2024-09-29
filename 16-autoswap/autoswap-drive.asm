@@ -3,6 +3,7 @@
 ;---	©2021.08.28.+ by BSZ
 ;---	Handle Disk Images, AutoSwap, drive side
 ;---	©2023.03.18. Bin to dec conversion modification
+;---	©2024.01.17. Image number check
 ;------------------------------------------------------------------------------
 	INCLUDE "../common/def6502.asm"
 	INCLUDE	"../common/vcpumacros-asl.asm"
@@ -19,9 +20,17 @@ channelno		=	2
 stack_top
 drivecode_go
 		ucldl					;CLK + DAT to Low, BUSY
-		ldsph	hi(stack_top)			;Set SPH
-		ldx	#lo(stack_top)
+		ldsph	hi(stack_top-1)			;Set SPH
+		ldx	#lo(stack_top-1)
 		txs					;Set SP
+
+		jsr	clrautoswap			;Clear autoswap list file
+		jsr	store_result			;"DS" store
+		ldx	#2
+		break	vcpu_syscall_changedisk		;CD any testdisk, expected result is an error
+		jsr	store_result			;"DS" store (error value)
+		txa
+		jsr	store_result			;Swaplist lineno store
 
 		jsr	setautoswap			;Select "AUTOSWAP.LST" file
 		jsr	store_result			;"DS" store
@@ -30,6 +39,8 @@ drivecode_go
 		break	vcpu_syscall_changedisk		;CD TestDisk #1
 		jsr	store_result			;"DS" store
 		bne	$$error
+		txa
+		jsr	store_result			;Swaplist lineno store
 		jsr	openchannel
 		bne	$$error
 
@@ -57,6 +68,8 @@ drivecode_go
 		break	vcpu_syscall_changedisk		;CD TestDisk #2
 		jsr	store_result			;"DS" store
 		bne	$$error
+		txa
+		jsr	store_result			;Swaplist lineno store
 		jsr	openchannel
 		bne	$$error
 
@@ -81,6 +94,12 @@ drivecode_go
 		jsr	readfileandcchk			;Read file & calc checksum
 		bne	$$error
 
+		ldx	#100
+		break	vcpu_syscall_changedisk		;CD TestDisk #100 <- invalid, save results
+		jsr	store_result			;"DS" store
+		txa
+		jsr	store_result			;Actual Swaplist lineno store
+
 		jsr	changedir_parnt			;CD ..
 		jsr	store_result			;"DS" store
 		;bne	$$error
@@ -93,13 +112,23 @@ $$errorcopy	lda	_results,x
 		bne	$$errorcopy
 		break	vcpu_syscall_exit_fillederror		;Exit, error channel's content ready
 
+;---	Clear AUTOSWAP file:
+clrautoswap	ldzph	hi(_setswpflcmd)
+		ldy	#lo(_setswpflcmd)
+		ldx	#_clrswpflcmd_e - _setswpflcmd
+		break	vcpu_syscall_directcommand_mem		;XS without parameter
+		rts
+
 ;---	Set AUTOSWAP file:
 setautoswap	ldzph	hi(_setswpflcmd)
 		ldy	#lo(_setswpflcmd)
 		ldx	#_setswpflcmd_e - _setswpflcmd
 		break	vcpu_syscall_directcommand_mem		;XS:...
 		rts
-_setswpflcmd	BYT	"XS:AUTOSWAP.LST"
+
+_setswpflcmd	BYT	"XS"
+_clrswpflcmd_e
+		BYT	":AUTOSWAP.LST"
 _setswpflcmd_e
 
 ;---	Change directory to parent:
@@ -114,7 +143,7 @@ _changedsk_bk_e
 ;---	Channel open for disk block read:
 openchannel	ldzph	hi($$openchn)
 		ldy	#lo($$openchn)
-		ldx	#$$openchn_e - $$openchn	;"#", one characte
+		ldx	#$$openchn_e - $$openchn	;"#", one character
 		lda	#channelno			;Channel
 		break	vcpu_syscall_open_mem
 		sty	_channeladdrhi
@@ -217,7 +246,7 @@ readsector	stx	vcpu_bin2ascii			;Convert "Sec" to ASCII string
 		ldzph	hi($$blrdstr)
 		ldy	#lo($$blrdstr)
 		ldx	#$$blrdstr_e - $$blrdstr
-		break	vcpu_syscall_directcommand_mem	;Change dir to TestDisk1
+		break	vcpu_syscall_directcommand_mem	;Read sector
 		jmp	store_result_if_nook
 
 $$blrdstr	BYT	"U1 "			;Command: Read block

@@ -5,6 +5,7 @@
 ;---	UCDTA/UATCD commands on drive side, reversed bit order,
 ;---				 preferred communication method
 ;------------------------------------------------------------------------------
+	INCLUDE	"_tempsyms_.inc"		;platform/name defines, generated / deleted automatically
 	INCLUDE "../common/def6502.asm"
 	INCLUDE	"../common/defines.asm"
 ;------------------------------------------------------------------------------
@@ -51,7 +52,7 @@ $$vcpuready	jsr	rom_primm
 		jsr	sd2i_execmemory_simple
 
 		jsr	rom_primm
-		BYT	ascii_return,"  -SPACE TO EXIT-"
+		BYT	ascii_return,"# ",ascii_rvson,"[SPACE]",ascii_rvsoff,": EXIT"
 		BYT	ascii_return,ascii_return,ascii_return,ascii_return
 		BYT	ascii_up,ascii_up,ascii_up,ascii_up,ascii_up,0
 		jsr	fillscreenfordata
@@ -60,33 +61,33 @@ $$vcpuready	jsr	rom_primm
 
 		lda	#0
 		sta	z_ndx		;Clear Interrupt's keyboard buffer
-    IF target_platform = 20
+    IF target_platform == 20
 		lda	#%11011100		;Release CLK, DAT
 		sta	$912c
 		lda	#%00000011
 		sta	$911f			;Release ATN
 		lda	#%11111100		;Dirty hack: all Joy bits + Cas.Sense output and LOW
 		sta	$9113			;DDRA
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		lda	#def_cia_vicbank | %00000000	;Release ATN, CLK, DAT
 		sta	$dd00
 		lda	#%00111111			;Only DAT/CLK in input
 		sta	$dd02
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		lda	#%00001000		;Cas.Mtr Off, Release ATN, CLK, DAT
 		sta	$01
     ENDIF
 
 $$commtestcycle
-    IF target_platform = 20
+    IF target_platform == 20
 		lda	$911f			;VIA1 DRA
 		and	#%00000011
 		cmp	#%00000011
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		lda	$dd00			;CIA port for handle serial lines
 		and	#%11000000
 		cmp	#%11000000		;DAT+CLK = high?
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		lda	$01			;CPU port for handle serial lines
 		and	#%11000000
 		cmp	#%11000000		;DAT+CLK = high?
@@ -113,13 +114,13 @@ $$sendcyc	lda	$$data
 		iny
 		bne	$$sendcyc
 
-    IF target_platform = 20
+    IF target_platform == 20
 		lda	#%11011100			;Release CLK, DAT
 		sta	$912c
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		lda	#def_cia_vicbank | %00000000	;Release CLK, DAT (ATN)
 		sta	$dd00
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		lda	#%00001000		;Cas.Mtr Off, Release CLK, DAT (ATN)
 		sta	$01
     ENDIF
@@ -136,15 +137,15 @@ $$recvcyc	jsr	bytereceiver
 		jmp	$$commtestcycle
 
 $$statexit
-    IF target_platform = 20
+    IF target_platform == 20
 		lda	#%11011100		;Release CLK, DAT
 		sta	$912c
 		lda	#%10000000		;Normal DDRA restore
 		sta	$9113			;DDRA
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		lda	#def_cia_vicbank | %00000000	;Release CLK, DAT (ATN)
 		sta	$dd00
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		lda	#%00001000		;Cas.Mtr Off, Release CLK, DAT (ATN)
 		sta	$01
     ENDIF
@@ -155,7 +156,7 @@ $$statexit
 		jsr	sd2i_printstatus
 		lda	#0
 		sta	z_ndx			;Clear keyboard buffer
-$$exit		rts
+$$exit		jmp	program_exit
 
 $$datastart	BYT	$00
 $$data		BYT	$00
@@ -163,7 +164,7 @@ $$data		BYT	$00
 
 ;---	Send BYTE to drive:
 bytesender
-    IF target_platform = 20
+    IF target_platform == 20
 		sty	z_eal
 		asl	a
 		rol	a
@@ -210,7 +211,7 @@ $$clkdattable	BYT	%11111110			;DAT Low / CLK Low
 		BYT	%11111100			;DAT Low / CLK HiZ
 		BYT	%11011110			;DAT HiZ / CLK Low
 		BYT	%11011100			;DAT HiZ / CLK HiZ
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		eor	#%11111111
 		tax
 		lsr	a
@@ -236,7 +237,7 @@ $$clkdattable	BYT	%11111110			;DAT Low / CLK Low
 		ora	#def_cia_vicbank | %00000000	;Set CLK (B0) / DAT (B1), release ATN
 		sta	$dd00
 		rts
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		sta	z_eal
 		lda	#%00001100		;Cas.Mtr Off, Drive ATN
 		asl	z_eal
@@ -275,7 +276,7 @@ $$sendeven4	sta	$01			;B10 to CLK/DAT, Release ATN
 
 ;---	Receive BYTE from drive:
 bytereceiver
-    IF target_platform = 20
+    IF target_platform == 20
 		sty	z_eah
 		ldx	#%10000000		;ATN drive bit
 		ldy	#%00000000		;ATN drive bit
@@ -296,7 +297,7 @@ bytereceiver
 		eor	#%10000000
 		ldy	z_eah
 		rts
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		sty	z_eah				;Y save
 		ldx	#def_cia_vicbank | %00001000	;Drive ATN
 		ldy	#def_cia_vicbank | %00000000	;Release ATN
@@ -327,7 +328,7 @@ bytereceiver
 		lda	z_eal
 		ldy	z_eah
 		rts
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		sty	z_eah
 		ldx	#%00001100			;ATN Drive bit
 		ldy	#%00001000			;ATN Release bit
@@ -361,7 +362,7 @@ bytereceiver
     ENDIF
 ;------------------------------------------------------------------------------
 ;	Previously compiled drivecode binary:
-_drivecode	BINCLUDE "sr2b-ure-drive.prg"
+_drivecode	BINCLUDE "sr2b-ure-drive.bin"
 _drivecode_end
 ;------------------------------------------------------------------------------
 displaylevel	set	1

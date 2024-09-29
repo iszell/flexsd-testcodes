@@ -5,6 +5,7 @@
 ;---	Programmed I/O on drive side, only for testing, not recommended for
 ;---	  regular use!
 ;------------------------------------------------------------------------------
+	INCLUDE	"_tempsyms_.inc"		;platform/name defines, generated / deleted automatically
 	INCLUDE "../common/def6502.asm"
 	INCLUDE	"../common/defines.asm"
 ;------------------------------------------------------------------------------
@@ -14,7 +15,11 @@
 		jsr	rom_primm
 		BYT	ascii_return,ascii_return,ascii_return,ascii_return
 		BYT	ascii_return,ascii_return,"SD2IEC SEND+RECV 2BIT:"
+    IF target_platform <> 20
 		BYT	ascii_return,"PROGRAMMED I/O, NOT RECOMMENDED",ascii_return,0
+    ELSE
+		BYT	ascii_return,"PIO2B, NOT RECOMMENDED",ascii_return,ascii_up,0
+    ENDIF
 
 		jsr	sd2i_scanning_bus
 		sta	z_fa				;Set SD2IEC Unit No
@@ -50,7 +55,7 @@ $$vcpuready	jsr	rom_primm
 		jsr	sd2i_execmemory_simple
 
 		jsr	rom_primm
-		BYT	ascii_return,"  -SPACE TO EXIT-"
+		BYT	ascii_return,"# ",ascii_rvson,"[SPACE]",ascii_rvsoff,": EXIT"
 		BYT	ascii_return,ascii_return,ascii_return,ascii_return
 		BYT	ascii_up,ascii_up,ascii_up,ascii_up,ascii_up,0
 		jsr	fillscreenfordata
@@ -60,15 +65,15 @@ $$vcpuready	jsr	rom_primm
 		lda	#0
 		sta	z_ndx		;Clear Interrupt's keyboard buffer
 $$commtestcycle
-    IF target_platform = 20
+    IF target_platform == 20
 		lda	$911f			;VIA1 DRA
 		and	#%00000011
 		cmp	#%00000011		;DAT+CLK = high?
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		lda	$dd00			;CIA port for handle serial lines
 		and	#%11000000
 		cmp	#%11000000		;DAT+CLK = high?
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		lda	$01			;CPU port for handle serial lines
 		and	#%11000000
 		cmp	#%11000000		;DAT+CLK = high?
@@ -95,15 +100,15 @@ $$sendcyc	lda	$$data
 		iny
 		bne	$$sendcyc
 
-    IF target_platform = 20
+    IF target_platform == 20
 		lda	#%11011100		;Release CLK, DAT
 		sta	$912c
 		jsr	_wait6
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		lda	#def_cia_vicbank | %00000000	;Release CLK, DAT (ATN)
 		sta	$dd00
 		jsr	_wait6
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		lda	#%00001000		;Cas.Mtr Off, Release CLK, DAT (ATN)
 		sta	$01
 		jsr	_wait6
@@ -121,13 +126,13 @@ $$recvcyc	jsr	bytereceiver
 		jmp	$$commtestcycle
 
 $$statexit
-    IF target_platform = 20
+    IF target_platform == 20
 		lda	#%11011100		;Release CLK, DAT
 		sta	$912c
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		lda	#def_cia_vicbank | %00000000	;Release CLK, DAT (ATN)
 		sta	$dd00
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		lda	#%00001000		;Cas.Mtr Off, Release CLK, DAT (ATN)
 		sta	$01
     ENDIF
@@ -138,7 +143,7 @@ $$statexit
 		jsr	sd2i_printstatus
 		lda	#0
 		sta	z_ndx			;Clear keyboard buffer
-$$exit		rts
+$$exit		jmp	program_exit
 
 $$datastart	BYT	$00
 $$data		BYT	$00
@@ -146,7 +151,7 @@ $$data		BYT	$00
 
 ;---	Send BYTE to drive:
 bytesender
-    IF target_platform = 20
+    IF target_platform == 20
 		tax
 		sty	z_eal
 		and	#%00000011
@@ -194,7 +199,7 @@ $$clkdattable	BYT	%11111110			;DAT Low / CLK Low
 		BYT	%11111100			;DAT Low / CLK HiZ
 		BYT	%11011110			;DAT HiZ / CLK Low
 		BYT	%11011100			;DAT HiZ / CLK HiZ
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		eor	#%11111111
 		sta	z_eal
 		asl	a
@@ -222,7 +227,7 @@ $$clkdattable	BYT	%11111110			;DAT Low / CLK Low
 		ora	#def_cia_vicbank | %00000000	;Set CLK (B6) / DA7 (B5), release ATN
 		sta	$dd00
 		rts
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		eor	#%11111111		;Inverted drive of CLK/DAT lines
 		sta	z_eal
 		lda	#%00000000
@@ -261,7 +266,7 @@ $$clkdattable	BYT	%11111110			;DAT Low / CLK Low
 
 ;---	Receive BYTE from drive:
 bytereceiver
-    IF target_platform = 20
+    IF target_platform == 20
 ;;%11011100 DAT HiZ CLK HiZ
 ;;%11111100 DAT Lo  CLK HiZ
 ;;%11011110 DAT HiZ CLK Lo
@@ -301,7 +306,7 @@ bytereceiver
 		lda	z_eal
 		jsr	_wait6
 		rts
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		ldx	#def_cia_vicbank | %00001000	;ATN drive, CLK/DAT release
 		lda	$dd00				;Read B10
 		stx	$dd00				;Drive ATN
@@ -334,7 +339,7 @@ bytereceiver
 		and	#%11000000
 		ora	z_eal
 		rts
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		ldx	#%00001100			;ATN drive bit
 		lda	$01				;Read B10
 		stx	$01				;Drive ATN
@@ -382,7 +387,7 @@ _wait1_5	bit	$00
 		rts
 ;------------------------------------------------------------------------------
 ;	Previously compiled drivecode binary:
-_drivecode	BINCLUDE "sr2b-pio-drive.prg"
+_drivecode	BINCLUDE "sr2b-pio-drive.bin"
 _drivecode_end
 ;------------------------------------------------------------------------------
 displaylevel	set	1

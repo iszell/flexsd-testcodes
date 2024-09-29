@@ -24,76 +24,80 @@ drivecode_sptr		=	drivecode_start + $000
 		uwckh
 		uwdth
 
-		lda	#%11100000
-		utest
-		sta	vcpu_errorbuffer+0
-		stx	vcpu_errorbuffer+1
-		sty	vcpu_errorbuffer+2
-		tsx
-		stx	vcpu_errorbuffer+3
-		lda	#%01111111
-		utest
-		sta	vcpu_errorbuffer+4
-		stx	vcpu_errorbuffer+5
-		sty	vcpu_errorbuffer+6
-		tsx
-		stx	vcpu_errorbuffer+7
-		lda	#%11100000
-		utest
-		sta	vcpu_errorbuffer+8
-		stx	vcpu_errorbuffer+9
-		sty	vcpu_errorbuffer+10
-		tsx
-		stx	vcpu_errorbuffer+11
+		ldy	#0			;Result offset init
+
+		lda	#%11110000
+		sta	vcpu_diag
+		jsr	copyresult
+		lda	#%01110000
+		sta	vcpu_diag
+		jsr	copyresult
+		lda	#%11110000
+		sta	vcpu_diag
+		jsr	copyresult
 
 ;	CLK:
-		lda	#%11100000
-		utest
-		sta	vcpu_errorbuffer+12
-		stx	vcpu_errorbuffer+13
-		sty	vcpu_errorbuffer+14
-		tsx
-		stx	vcpu_errorbuffer+15
-		lda	#%10111111
-		utest
-		sta	vcpu_errorbuffer+16
-		stx	vcpu_errorbuffer+17
-		sty	vcpu_errorbuffer+18
-		tsx
-		stx	vcpu_errorbuffer+19
-		lda	#%11100000
-		utest
-		sta	vcpu_errorbuffer+20
-		stx	vcpu_errorbuffer+21
-		sty	vcpu_errorbuffer+22
-		tsx
-		stx	vcpu_errorbuffer+23
+		lda	#%11110000
+		sta	vcpu_diag
+		jsr	copyresult
+		lda	#%10110000
+		sta	vcpu_diag
+		jsr	copyresult
+		lda	#%11110000
+		sta	vcpu_diag
+		jsr	copyresult
 
 ;	ATN:
-		lda	#%11100000
-		utest
-		sta	vcpu_errorbuffer+24
-		stx	vcpu_errorbuffer+25
-		sty	vcpu_errorbuffer+26
-		tsx
-		stx	vcpu_errorbuffer+27
-		lda	#%11011111
-		utest
-		sta	vcpu_errorbuffer+28
-		stx	vcpu_errorbuffer+29
-		sty	vcpu_errorbuffer+30
-		tsx
-		stx	vcpu_errorbuffer+31
-		lda	#%11100000
-		utest
-		sta	vcpu_errorbuffer+32
-		stx	vcpu_errorbuffer+33
-		sty	vcpu_errorbuffer+34
-		tsx
-		stx	vcpu_errorbuffer+35
+		lda	#%11110000
+		sta	vcpu_diag
+		jsr	copyresult
+		lda	#%11010000
+		sta	vcpu_diag
+		jsr	copyresult
+		lda	#%11110000
+		sta	vcpu_diag
+		jsr	copyresult
 
-		ldx	#36				;36 BYTEs in Error buffer
+;	SRQ:
+		lda	vcpu_version
+		and	#%00011111			;Only VCPU version remain
+		cmp	#2				;R2? (Fast Serial support...)
+		bcc	$$nofastser
+		lda	#%11110000
+		sta	vcpu_diag
+		jsr	copyresult
+		lda	#%11100000
+		sta	vcpu_diag
+		jsr	copyresult
+		lda	#%11110000
+		sta	vcpu_diag
+		jsr	copyresult
+$$nofastser
+		tya
+		tax					;X = 36 BYTEs in Error buffer
+		dey
+$$move		lda	resultdata,y
+		sta	vcpu_errorbuffer,y
+		dey
+		bpl	$$move
+
+		;ldx	#36				;X = 36 / 48 BYTEs in Error buffer
 		break	vcpu_syscall_exit_fillederror
+
+;	Copy result:
+;	Y <- start pos
+;	Y -> end pos
+copyresult	ldx	#0
+.copy		lda	vcpu_errorbuffer,x
+		sta	resultdata,y
+		iny
+		inx
+		cpx	#4
+		bne	.copy
+		rts
+
+resultdata	RMB	4*3*3			;4×3×3 BYTES
+
 ;------------------------------------------------------------------------------
 	SHARED	drivecode_start
 ;------------------------------------------------------------------------------

@@ -3,6 +3,7 @@
 ;---	©2021.09.17.+ by BSZ
 ;---	VCPU core test
 ;------------------------------------------------------------------------------
+	INCLUDE	"_tempsyms_.inc"		;platform/name defines, generated / deleted automatically
 	INCLUDE "../common/def6502.asm"
 	INCLUDE	"../common/defines.asm"
 	INCLUDE	"../common/vcpumacros-asl.asm"
@@ -12,12 +13,12 @@
 ;------------------------------------------------------------------------------
 ;---	If target = VIC20, not enough memory in default configuration
 def_memok	set	"Y"
-    IF target_platform = 20
-      IF vic20_setmem = 0
+    IF target_platform == 20
+      IF vic20_setmem == 0
 def_memok	set	"N"
-      ELSEIF vic20_setmem = 3
+      ELSEIF vic20_setmem == 3
 def_memok	set	"Y"
-      ELSEIF vic20_setmem = 8
+      ELSEIF vic20_setmem == 8
 def_memok	set	"Y"
       ENDIF
     ENDIF
@@ -41,23 +42,22 @@ $$sd2iecpresent	jsr	rom_primm
 		jsr	sd2i_checkvcpusupport		;Check SD2IEC VCPU support
 		bcc	$$vcpuready
 		jmp	$$exit
-$$vcpuready	sta	_vcpubufferno			;Save VCPU buffer no
-
-    IF def_memok = "Y"
+$$vcpuready	lda	_vcpu_version
+		and	#%00011111
+		sta	_vcpurev
+    IF def_memok == "Y"
 		jsr	coretests			;Run test
     ELSE
 		jsr	rom_primm
 		BYT	ascii_return,ascii_return,"MORE MEMORY NEEDED",0
     ENDIF
-		jsr	rom_primm
-		BYT	ascii_return,0
-$$exit		rts
+$$exit		jmp	program_exit
 ;------------------------------------------------------------------------------
-    IF def_memok = "Y"
+    IF def_memok == "Y"
 	INCLUDE	"vcpuc-misc.asm"		;Misc functions
 	INCLUDE	"vcpuc-comp.asm"		;VCPU core test functions, computer side
 _drivecodes
-	BINCLUDE "vcpuctst-drive.prg"		;VCPU core test functions, drive side
+	BINCLUDE "vcpuctst-drive.bin"		;VCPU core test functions, drive side
     ENDIF
 ;------------------------------------------------------------------------------
 displaylevel	set	0
@@ -73,6 +73,6 @@ displaylevel	set	1
 displaylevel	set	2
 	INCLUDE	"../common/getvcpustatus.asm"
 ;------------------------------------------------------------------------------
-_vcpubufferno	RMB	1
+_vcpurev	RMB	1
 _membuffer	RMB	256
 ;------------------------------------------------------------------------------

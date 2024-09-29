@@ -11,7 +11,9 @@ displev		SET	displaylevel
 ;---	A -> (last) SD2IEC Unit No
 ;---	X -> Units connected to serial bus
 
+    IFNDEF sd2i_scanning_bus
 sd2i_scanning_bus
+    ENDIF
 
 		lda	#8			;Start Unit No
 		sta	z_fa
@@ -65,7 +67,7 @@ $$answerclr	sta	$$answer,y
 ;	Check "answer":
 ;	"SD2IEC"/"1541"/"TDISK"/"1581"/"???"
 $$check_unittyp
-    IF target_platform = 264
+    IF target_platform == 264
 		ldx	#4
 $$check_ut_tdc	lda	$$answer+16,x
 		cmp	$$drivetyp_1551,x
@@ -84,6 +86,8 @@ $$check_ut_ntd
 $$check_ut_sdc	lda	$$answer+3,x
 		cmp	$$drivetyp_sd2i,x
 		bne	$$check_ut_nsd
+		dex
+		bpl	$$check_ut_sdc
 		lda	z_fa
 		sta	$$lastsd2iecno		;Set SD2IEC Unit No
     IF displev < 1
@@ -98,7 +102,7 @@ $$check_ut_nsd
     ENDIF
 		rts
 
-    IF target_platform = 264
+    IF target_platform == 264
 $$drivetyp_1551	BYT	"TDISK"			;1551
     ENDIF
 $$drivetyp_sd2i	BYT	"SD2IEC"		;SD2IEC

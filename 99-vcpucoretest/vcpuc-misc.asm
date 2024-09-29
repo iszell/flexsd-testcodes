@@ -17,6 +17,8 @@ def_job_setjob		=	10
 def_job_checkjob	=	11
 def_job_checkvcpusr	=	12
 def_job_checkvcpuaddr	=	13
+def_job_checkminvcpuver	=	14
+def_job_checkextstatus	=	15
 ;------------------------------------------------------------------------------
 ;---	VCPU core test routine: run phases
 coretests	ldx	#lo(phaseaddrlist)
@@ -50,9 +52,15 @@ $$tc_nextphase	jsr	rom_primm
 		jsr	bas_linprt
 		jsr	run_test_phase
 		bcs	$$phaseerror
+		bit	_testskip
+		bpl	$$pass
+		asl	_testskip			;Clear SKIP sign
 		jsr	rom_primm
+		BYT	" SKIP",0
+		jmp	$$continue
+$$pass		jsr	rom_primm
 		BYT	" PASS",0
-		clc
+$$continue	clc
 		lda	z_sal
 		adc	#2
 		sta	z_sal
@@ -105,6 +113,8 @@ $$jobs		ADR	$$normalexit		;def_job_readyexit	=	0
 		ADR	$$errorexit		;def_job_checkjob	=	11
 		ADR	job_checkvcpusr		;def_job_checkvcpusr	=	12
 		ADR	job_checkvcpuaddr	;def_job_checkvcpuaddr	=	13
+		ADR	job_checkminvcpuver	;def_job_checkminvcpuver =	14
+		ADR	job_checkextstatus	;def_job_checkextstatus	=	15
 
 $$normalexit	pla
 		pla			;Drop return address
@@ -185,12 +195,21 @@ $$ze		BYT	"ZE"
 _execute	jsr	sd2i_sendcommand
 		jmp	_execrecvres
 ;------------------------------------------------------------------------------
+;---	Check VCPU status, extended regs (VCPU R2):
+job_checkextstatus
+		ldx	#12
+		lda	#18
+		bne	_job_chkstatus
+
 ;---	Compare VCPU status:
-job_checkstatus	jsr	getbyte_testdescriptor		;Required VCPU status data address Lo
+job_checkstatus	ldx	#0
+		lda	#12
+
+_job_chkstatus	sta	$$statlen+1
+		jsr	getbyte_testdescriptor		;Required VCPU status data address Lo
 		sta	z_eal
 		jsr	getbyte_testdescriptor		;Required VCPU status data address Hi
 		sta	z_eah
-		ldx	#0
 		ldy	#0
 $$statuschk	lda	_vcpustatus,x			;Received VCPU status
 		and	(z_eal),y			;AND with mask
@@ -199,7 +218,7 @@ $$statuschk	lda	_vcpustatus,x			;Received VCPU status
 		bne	printvcpustatus_err
 		iny
 		inx
-		cpx	#12				;PCL,PCH,A,X,Y,SR,SP,SPH,ZPH,INTERRUPT,COMMAND,LASTOPCODE
+$$statlen	cpx	#$ff				;PCL,PCH,A,X,Y,SR,SP,SPH,ZPH,INTERRUPT,COMMAND,LASTOPCODE,RRL,RRH,U1RL,U1RH,U2RL,U2RH
 		bne	$$statuschk
 		clc					;OK!
 		rts
@@ -213,7 +232,7 @@ printvcpustatus_err
 		jsr	printmem_setdispaddr
 		ldx	#lo(_vcpustatus)
 		ldy	#hi(_vcpustatus)
-		lda	#12
+		lda	_vcpustatus_siz			;#12/#18
 		jsr	printmem
 		sec
 		rts
@@ -304,7 +323,7 @@ job_checkvcpusr	jsr	getbyte_testdescriptor		;Required SR value
 
 $$error		jmp	printvcpustatus_err		;Print VCPU status + SEC: ERROR!
 ;------------------------------------------------------------------------------
-;---	Chack VCPU ADDR:
+;---	Check VCPU ADDR:
 job_checkvcpuaddr
 		jsr	getbyte_testdescriptor		;Required PCL value
 		tax
@@ -317,4 +336,25 @@ job_checkvcpuaddr
 		rts
 
 $$error		jmp	printvcpustatus_err		;Print VCPU status + SEC: ERROR!
+;------------------------------------------------------------------------------
+;---	Check VCPU version (If older, test SKIP)
+job_checkminvcpuver
+
+		jsr	getbyte_testdescriptor		;Minimal VCPU version
+		cmp	_vcpurev
+		beq	$$okay
+		bcc	$$okay
+		lda	#%10000000
+		sta	_testskip			;SKIP sign
+		pla
+		pla					;Drop return address
+
+$$okay		clc					;OK!
+		rts
+
+_testskip	BYT	%00000000
+;------------------------------------------------------------------------------
+;------------------------------------------------------------------------------
+;------------------------------------------------------------------------------
+;------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------

@@ -28,6 +28,8 @@ phaseaddrlist	ADR	cc_t0			;SysCall test
 		ADR	cc_t22			;BIT $zp / $uiop tests
 		ADR	cc_t23			;UINDB / UDEDB test
 		ADR	cc_t24			;Convert byte value to ASCII decimal chars + decimal digits with converter peripheral
+		ADR	cc_t25			;Memory / I/O boundary tests
+		ADR	cc_t26			;VCPU R2 USER1 / USER2 / USERR commands tests
 		ADR	$0000
 ;------------------------------------------------------------------------------
 ;---	Test0: SysCall test
@@ -122,7 +124,7 @@ $$checkdata	BYT	dc_t3_data1
 		BYT	dc_t3_data2
 		BYT	dc_t3_data3
 ;------------------------------------------------------------------------------
-;---	Test4: SPH/ZPH set test
+;---	Test4: SPH/ZPH set test, memory, command and error channel region tests
 
 cc_t4		BYT	def_job_setjob
 		ADR	$$setdata
@@ -153,9 +155,21 @@ cc_t4		BYT	def_job_setjob
 		BYT	def_job_contexecute
 		BYT	def_job_checkstatus
 		ADR	$$statusdata5
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata5
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata5
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata5
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata5
 		BYT	def_job_readyexit
 
-$$setdata	ldx	_vcpubufferno			;Buffer size: 6: $0600..$FFFF Error
+$$setdata	ldx	_vcpu_memory_size		;Buffer size: 6: $0600..$FBFF Error, 15: $0F00..$FBFF Error
 		stx	_drivecodes + dc_test4_bad1+1
 		stx	_drivecodes + dc_test4_bad2+1
 		stx	_drivecodes + dc_test4_bad3+2
@@ -173,6 +187,18 @@ $$setdata	ldx	_vcpubufferno			;Buffer size: 6: $0600..$FFFF Error
 		dex
 		stx	_drivecodes + dc_test4_good4+1
 		stx	$$statusdata4_z+1
+		ldx	_vcpu_commandch_size		;Size of command channel
+		stx	_drivecodes + dc_test4_bad5+1
+		stx	_drivecodes + dc_test4_bad6+1
+		dex
+		stx	_drivecodes + dc_test4_good7+1
+		stx	_drivecodes + dc_test4_good8+1
+		ldx	_vcpu_errorch_size		;Size of error channel
+		stx	_drivecodes + dc_test4_bad7+1
+		stx	_drivecodes + dc_test4_bad8+1
+		dex
+		stx	_drivecodes + dc_test4_good9+1
+		stx	_drivecodes + dc_test4_good10+1
 		rts
 
 $$execdata	ADR	dc_t4_start							;ADDRLO,ADDRHI
@@ -965,7 +991,449 @@ $$checkdata	BYT	"000"
 		BYT	1,0,0
 		BYT	2,5,5
 ;------------------------------------------------------------------------------
+;---	Test25: Memory / I/O boundary tests
+cc_t25		BYT	def_job_download
+		ADR	dc_test25_codeend - dc_test25_codestart		;BYTEno
+		ADR	dc_test25_codestart				;Start offset
+		ADR	dc_t25_start					;Drive start address
+		BYT	def_job_execute
+		ADR	dc_t25_start					;Drive start address
+		BYT	def_job_checkstatus
+		ADR	$$statusdata1
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata2
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata3
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata4
+
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata5
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata6
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata7
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata8
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata9
+		BYT	def_job_readyexit
+
+$$statusdata1	BYT	$ff,lo(dc_t25_p2+3)	;PC LO
+		BYT	$ff,hi(dc_t25_p2+3)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$00,$00			;X
+		BYT	$00,$00			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$00,$00			;SP
+		BYT	$00,$00			;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_error_rwaddr	;INTERRUPT
+		BYT	$00,0			;COMMAND
+		BYT	$00,$00			;LASTOPCODE
+
+$$statusdata2	BYT	$ff,lo(dc_t25_p3+3)	;PC LO
+		BYT	$ff,hi(dc_t25_p3+3)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$00,$00			;X
+		BYT	$00,$00			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$00,$00			;SP
+		BYT	$00,$00			;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_error_rwaddr	;INTERRUPT
+		BYT	$00,0			;COMMAND
+		BYT	$00,$00			;LASTOPCODE
+
+$$statusdata3	BYT	$ff,lo(dc_t25_p5+3)	;PC LO
+		BYT	$ff,hi(dc_t25_p5+3)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$00,$00			;X
+		BYT	$00,$00			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$00,$00			;SP
+		BYT	$00,$00			;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_error_rwaddr	;INTERRUPT
+		BYT	$00,0			;COMMAND
+		BYT	$00,$00			;LASTOPCODE
+
+$$statusdata4	BYT	$ff,lo(dc_t25_p6+3)	;PC LO
+		BYT	$ff,hi(dc_t25_p6+3)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$00,$00			;X
+		BYT	$00,$00			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$00,$00			;SP
+		BYT	$00,$00			;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_error_rwaddr	;INTERRUPT
+		BYT	$00,0			;COMMAND
+		BYT	$00,$00			;LASTOPCODE
+
+$$statusdata5	BYT	$ff,lo(dc_t25_p8+3)	;PC LO
+		BYT	$ff,hi(dc_t25_p8+3)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$00,$00			;X
+		BYT	$00,$00			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$00,$00			;SP
+		BYT	$00,$00			;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_error_rwaddr	;INTERRUPT
+		BYT	$00,0			;COMMAND
+		BYT	$00,$00			;LASTOPCODE
+
+$$statusdata6	BYT	$ff,lo(dc_t25_p9+3)	;PC LO
+		BYT	$ff,hi(dc_t25_p9+3)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$00,$00			;X
+		BYT	$00,$00			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$00,$00			;SP
+		BYT	$00,$00			;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_error_rwaddr	;INTERRUPT
+		BYT	$00,0			;COMMAND
+		BYT	$00,$00			;LASTOPCODE
+
+$$statusdata7	BYT	$ff,lo(dc_t25_p11+3)	;PC LO
+		BYT	$ff,hi(dc_t25_p11+3)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$00,$00			;X
+		BYT	$00,$00			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$00,$00			;SP
+		BYT	$00,$00			;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_error_rwaddr	;INTERRUPT
+		BYT	$00,0			;COMMAND
+		BYT	$00,$00			;LASTOPCODE
+
+$$statusdata8	BYT	$ff,lo(dc_t25_p12+3)	;PC LO
+		BYT	$ff,hi(dc_t25_p12+3)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$00,$00			;X
+		BYT	$00,$00			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$00,$00			;SP
+		BYT	$00,$00			;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_error_rwaddr	;INTERRUPT
+		BYT	$00,0			;COMMAND
+		BYT	$00,$00			;LASTOPCODE
+
+$$statusdata9	BYT	$ff,lo(dc_t25_p13+2)	;PC LO
+		BYT	$ff,hi(dc_t25_p13+2)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$00,$00			;X
+		BYT	$00,$00			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$00,$00			;SP
+		BYT	$00,$00			;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_functioncall	;INTERRUPT
+		BYT	$ff,def_exitcode	;COMMAND
+		BYT	$ff,$00			;LASTOPCODE
 ;------------------------------------------------------------------------------
+;---	Test26: VCPU R2 USER1 / USER2 / USERR commands tests
+cc_t26		BYT	def_job_checkminvcpuver, 2			;VCPU R2
+		BYT	def_job_setjob
+		ADR	$$setdata
+		BYT	def_job_download
+		ADR	dc_test26_codeend - dc_test26_codestart		;BYTEno
+		ADR	dc_test26_codestart				;Start offset
+		ADR	dc_t26_start					;Drive start address
+		BYT	def_job_execute
+		ADR	dc_t26_start					;Drive start address
+		BYT	def_job_checkextstatus
+		ADR	$$statusdata1
+		BYT	def_job_contexecute
+		BYT	def_job_checkextstatus
+		ADR	$$statusdata2
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata3
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata4
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata5
+		BYT	def_job_contexecute
+		BYT	def_job_checkextstatus
+		ADR	$$statusdata6
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata7
+		BYT	def_job_checkextstatus
+		ADR	$$statusdata8
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata9
+		BYT	def_job_checkextstatus
+		ADR	$$statusdata10
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata11
+		BYT	def_job_checkextstatus
+		ADR	$$statusdata12
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata13
+		BYT	def_job_checkextstatus
+		ADR	$$statusdata14
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata15
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata16
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata17
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata18
+		BYT	def_job_checkextstatus
+		ADR	$$statusdata19
+		BYT	def_job_contexecute
+		BYT	def_job_checkstatus
+		ADR	$$statusdata20
+		BYT	def_job_checkextstatus
+		ADR	$$statusdata21
+		BYT	def_job_readyexit
+
+$$setdata	ldx	_vcpu_memory_size
+		stx	$$statusdata3+9
+		stx	$$statusdata4+9
+		stx	$$statusdata5+9
+		dex
+		stx	$$statusdata2+3
+		stx	$$statusdata2+7
+		stx	$$statusdata2+11
+		rts
+
+$$statusdata1	BYT	$ff,lo($0000)		;RRL
+		BYT	$ff,hi($0000)		;RRH
+		BYT	$ff,lo($0000)		;U1RL
+		BYT	$ff,hi($0000)		;U1RH
+		BYT	$ff,lo($0000)		;U2RL
+		BYT	$ff,hi($0000)		;U2RH
+
+$$statusdata2	BYT	$ff,lo($00ff)		;RRL
+		BYT	$ff,hi($00ff)		;RRH
+		BYT	$ff,lo($00ff)		;U1RL
+		BYT	$ff,hi($00ff)		;U1RH
+		BYT	$ff,lo($00ff)		;U2RL
+		BYT	$ff,hi($00ff)		;U2RH
+
+$$statusdata3	BYT	$ff,lo(dc_t26_setrr+2)	;PC LO
+		BYT	$ff,hi(dc_t26_setrr+2)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$ff,$00			;X
+		BYT	$ff,$ee			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$ff,lo(dc_t26_stack-2)	;SP
+		BYT	$ff,hi(dc_t26_stack-2)	;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_error_address	;INTERRUPT
+		BYT	$00,$00			;COMMAND
+		BYT	$00,$00			;LASTOPCODE
+
+$$statusdata4	BYT	$ff,lo(dc_t26_setu1+2)	;PC LO
+		BYT	$ff,hi(dc_t26_setu1+2)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$ff,$00			;X
+		BYT	$ff,$ee			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$ff,lo(dc_t26_stack-2)	;SP
+		BYT	$ff,hi(dc_t26_stack-2)	;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_error_address	;INTERRUPT
+		BYT	$00,$00			;COMMAND
+		BYT	$00,$00			;LASTOPCODE
+
+$$statusdata5	BYT	$ff,lo(dc_t26_setu2+2)	;PC LO
+		BYT	$ff,hi(dc_t26_setu2+2)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$ff,$00			;X
+		BYT	$ff,$ee			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$ff,lo(dc_t26_stack-2)	;SP
+		BYT	$ff,hi(dc_t26_stack-2)	;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_error_address	;INTERRUPT
+		BYT	$00,$00			;COMMAND
+		BYT	$00,$00			;LASTOPCODE
+
+$$statusdata6	BYT	$00,$00			;RRL
+		BYT	$00,$00			;RRH
+		BYT	$ff,lo(dc_t26_sub1)	;U1RL
+		BYT	$ff,hi(dc_t26_sub1)	;U1RH
+		BYT	$ff,lo(dc_t26_sub2)	;U2RL
+		BYT	$ff,hi(dc_t26_sub2)	;U2RH
+
+$$statusdata7	BYT	$ff,lo(dc_t26_sub1+2)	;PC LO
+		BYT	$ff,hi(dc_t26_sub1+2)	;PC HI
+		BYT	$ff,$55			;A
+		BYT	$00,$00			;X
+		BYT	$00,$00			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$ff,lo(dc_t26_stack)	;SP
+		BYT	$ff,hi(dc_t26_stack)	;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_functioncall	;INTERRUPT
+		BYT	$ff,def_exitcode	;COMMAND
+		BYT	$ff,$00			;LASTOPCODE
+$$statusdata8	BYT	$ff,lo(dc_t26_call1+1)	;RRL
+		BYT	$ff,hi(dc_t26_call1+1)	;RRH
+		BYT	$ff,lo(dc_t26_sub1)	;U1RL
+		BYT	$ff,hi(dc_t26_sub1)	;U1RH
+		BYT	$ff,lo(dc_t26_sub2)	;U2RL
+		BYT	$ff,hi(dc_t26_sub2)	;U2RH
+
+$$statusdata9	BYT	$ff,lo(dc_t26_ret1+2)	;PC LO
+		BYT	$ff,hi(dc_t26_ret1+2)	;PC HI
+		BYT	$ff,$55<<1		;A
+		BYT	$00,$00			;X
+		BYT	$00,$00			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$ff,lo(dc_t26_stack)	;SP
+		BYT	$ff,hi(dc_t26_stack)	;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_functioncall	;INTERRUPT
+		BYT	$ff,def_exitcode	;COMMAND
+		BYT	$ff,$00			;LASTOPCODE
+$$statusdata10	BYT	$ff,lo(dc_t26_call1+1)	;RRL
+		BYT	$ff,hi(dc_t26_call1+1)	;RRH
+		BYT	$ff,lo(dc_t26_sub1)	;U1RL
+		BYT	$ff,hi(dc_t26_sub1)	;U1RH
+		BYT	$ff,lo(dc_t26_sub2)	;U2RL
+		BYT	$ff,hi(dc_t26_sub2)	;U2RH
+
+$$statusdata11	BYT	$ff,lo(dc_t26_sub2+2)	;PC LO
+		BYT	$ff,hi(dc_t26_sub2+2)	;PC HI
+		BYT	$ff,$5a			;A
+		BYT	$00,$00			;X
+		BYT	$00,$00			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$ff,lo(dc_t26_stack)	;SP
+		BYT	$ff,hi(dc_t26_stack)	;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_functioncall	;INTERRUPT
+		BYT	$ff,def_exitcode	;COMMAND
+		BYT	$ff,$00			;LASTOPCODE
+$$statusdata12	BYT	$ff,lo(dc_t26_call2+1)	;RRL
+		BYT	$ff,hi(dc_t26_call2+1)	;RRH
+		BYT	$ff,lo(dc_t26_sub1)	;U1RL
+		BYT	$ff,hi(dc_t26_sub1)	;U1RH
+		BYT	$ff,lo(dc_t26_sub2)	;U2RL
+		BYT	$ff,hi(dc_t26_sub2)	;U2RH
+
+$$statusdata13	BYT	$ff,lo(dc_t26_ret2+2)	;PC LO
+		BYT	$ff,hi(dc_t26_ret2+2)	;PC HI
+		BYT	$ff,$5a!$ff		;A
+		BYT	$00,$00			;X
+		BYT	$00,$00			;Y
+		BYT	$00,%00000000		;SR
+		BYT	$ff,lo(dc_t26_stack)	;SP
+		BYT	$ff,hi(dc_t26_stack)	;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_functioncall	;INTERRUPT
+		BYT	$ff,def_exitcode	;COMMAND
+		BYT	$ff,$00			;LASTOPCODE
+$$statusdata14	BYT	$ff,lo(dc_t26_call2+1)	;RRL
+		BYT	$ff,hi(dc_t26_call2+1)	;RRH
+		BYT	$ff,lo(dc_t26_sub1)	;U1RL
+		BYT	$ff,hi(dc_t26_sub1)	;U1RH
+		BYT	$ff,lo(dc_t26_sub2)	;U2RL
+		BYT	$ff,hi(dc_t26_sub2)	;U2RH
+
+$$statusdata15	BYT	$ff,lo(dc_t26_crr+2)	;PC LO
+		BYT	$ff,hi(dc_t26_crr+2)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$ff,lo(dc_t26_call2+1)	;X
+		BYT	$ff,hi(dc_t26_call2+1)	;Y
+		BYT	$00,%00000000		;SR
+		BYT	$ff,lo(dc_t26_stack)	;SP
+		BYT	$ff,hi(dc_t26_stack)	;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_functioncall	;INTERRUPT
+		BYT	$ff,def_exitcode	;COMMAND
+		BYT	$ff,$00			;LASTOPCODE
+
+$$statusdata16	BYT	$ff,lo(dc_t26_cu1+2)	;PC LO
+		BYT	$ff,hi(dc_t26_cu1+2)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$ff,lo(dc_t26_sub1)	;X
+		BYT	$ff,hi(dc_t26_sub1)	;Y
+		BYT	$00,%00000000		;SR
+		BYT	$ff,lo(dc_t26_stack)	;SP
+		BYT	$ff,hi(dc_t26_stack)	;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_functioncall	;INTERRUPT
+		BYT	$ff,def_exitcode	;COMMAND
+		BYT	$ff,$00			;LASTOPCODE
+
+$$statusdata17	BYT	$ff,lo(dc_t26_cu2+2)	;PC LO
+		BYT	$ff,hi(dc_t26_cu2+2)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$ff,lo(dc_t26_sub2)	;X
+		BYT	$ff,hi(dc_t26_sub2)	;Y
+		BYT	$00,%00000000		;SR
+		BYT	$ff,lo(dc_t26_stack)	;SP
+		BYT	$ff,hi(dc_t26_stack)	;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_functioncall	;INTERRUPT
+		BYT	$ff,def_exitcode	;COMMAND
+		BYT	$ff,$00			;LASTOPCODE
+
+$$statusdata18	BYT	$ff,lo(dc_t26_s1+2)	;PC LO
+		BYT	$ff,hi(dc_t26_s1+2)	;PC HI
+		BYT	$ff,lo(dc_t26_call2+1)	;A
+		BYT	$ff,lo(dc_t26_call2+1)	;X
+		BYT	$ff,hi(dc_t26_call2+1)	;Y
+		BYT	$00,%00000000		;SR
+		BYT	$ff,lo(dc_t26_stack-2)	;SP
+		BYT	$ff,hi(dc_t26_stack-2)	;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_functioncall	;INTERRUPT
+		BYT	$ff,def_exitcode	;COMMAND
+		BYT	$ff,$00			;LASTOPCODE
+$$statusdata19	BYT	$ff,lo($0101)		;RRL
+		BYT	$ff,hi($0101)		;RRH
+		BYT	$ff,lo(dc_t26_sub1)	;U1RL
+		BYT	$ff,hi(dc_t26_sub1)	;U1RH
+		BYT	$ff,lo(dc_t26_sub2)	;U2RL
+		BYT	$ff,hi(dc_t26_sub2)	;U2RH
+
+$$statusdata20	BYT	$ff,lo(dc_t26_s2+2)	;PC LO
+		BYT	$ff,hi(dc_t26_s2+2)	;PC HI
+		BYT	$00,$00			;A
+		BYT	$ff,lo(dc_t26_call2+1)	;X
+		BYT	$ff,hi(dc_t26_call2+1)	;Y
+		BYT	$00,%00000000		;SR
+		BYT	$ff,lo(dc_t26_stack)	;SP
+		BYT	$ff,hi(dc_t26_stack)	;SPH
+		BYT	$00,$00			;ZPH
+		BYT	$ff,vcpu_functioncall	;INTERRUPT
+		BYT	$ff,def_exitcode	;COMMAND
+		BYT	$ff,$00			;LASTOPCODE
+$$statusdata21	BYT	$ff,lo(dc_t26_call2+1)	;RRL
+		BYT	$ff,hi(dc_t26_call2+1)	;RRH
+		BYT	$ff,lo(dc_t26_sub1)	;U1RL
+		BYT	$ff,hi(dc_t26_sub1)	;U1RH
+		BYT	$ff,lo(dc_t26_sub2)	;U2RL
+		BYT	$ff,hi(dc_t26_sub2)	;U2RH
 ;------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------

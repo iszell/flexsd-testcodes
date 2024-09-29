@@ -1,4 +1,4 @@
-AS = ../common/ass.sh
+ASP = ../common/assp.sh
 
 PRGNAME = b-showmem
 
@@ -7,7 +7,7 @@ $(error PLATFORM not set)
 endif
 
 $(PRGNAME)-$(PLATFORM).prg: *.asm
-	$(AS) $(PRGNAME) $(PLATFORM)
+	$(ASP) $(PRGNAME) $(PLATFORM)
 	mv $(PRGNAME).prg $(PRGNAME)-$(PLATFORM).prg
 	cp $(PRGNAME)-$(PLATFORM).prg $(PRGNAME)-$(PLATFORM)
 	mv $(PRGNAME).lst $(PRGNAME)-$(PLATFORM).lst

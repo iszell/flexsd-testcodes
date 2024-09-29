@@ -45,7 +45,7 @@ $$compnovf	pha
 		jmp	$$comperrcont
 
 $$errordisplay	jsr	rom_primm
-		BYT	"COMPARE ERROR!   ",0
+		BYT	"COMPARE ERROR!       ",0
 		sec				;SEC: ERROR
 		rts
 ;------------------------------------------------------------------------------

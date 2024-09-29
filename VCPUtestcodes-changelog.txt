@@ -1,0 +1,98 @@
+------------------------------------------------------------------------
+VCPU test codes - Changelog
+------------------------------------------------------------------------
+2024.Sep.25. - 1.3.0
+  All tests: some 'design' change: push button waiting redesigned
+  "vcpumacros-asl.asm" modified (VCPU R2: added parport commands)
+  "vcpumacros-acme.asm" modified (VCPU R2: added parport commands)
+  "getbuffers" expanded to save buffer states for later use, print can
+    be disabled, VIC20 print modified
+  "printstatus": add "device not present" check (VIC20/C64: not work,
+    KERNAL TKSA freeze if device not present)
+  "drivedetect": add "multiple-include" usability
+  "b-showmem": add KERNAL communication test (fill device's RAM by rnd
+    then read back and check) especially for the C128 fast serial comm,
+    but works in all modes
+  "a-detect": add device config utility (modify and save all kinds of
+    features)
+  "h-recvtime1b": add 2 MHz (double clock) mode (C128 only)
+  "l-recvtime2b": add 2 MHz (double clock) mode (C128 only)
+  "1-srpp" parallel port test added (New!)
+  "2-recvtimepp" parallel port test added (New!)
+  "3-loadtstpp" parallel port test added (New!)
+  "hosthwmacros" (VIC20/C64/plus/4/C128 version) for parallel port
+    handling (New!)
+
+----------
+2024.Mar.26. - 1.2.3
+  All tests: print test name on start/end ("assp.sh" generate/delete
+    symbol include automatically)
+  "a-detect" print device configuration
+  "m-loadtst1b", "n-loadtst2b", "v-loadtstfs", "q-benchmark":
+    Change testfile "tstdat2m.seq" (2 megabytes) to "tstdat1m.seq"
+    (1 megabytes), enough for this tests
+  "r-lstresstst" not get drive status on exit
+  "s-40trktst" add exit results validation
+
+2024.Jan.21. - 1.2.2
+  "t-srfs" fast-serial (C128) test added (New!)
+  "u-recvtimefs" fast-serial (C128) test added (New!)
+  "v-loadtstfs" fast-serial (C128) test added (New!)
+  "p-autoswap" add image number check+print, add invalid swapfile line
+    check, add no swapfile check
+  "s-40trktst" add image number check
+
+2023.Dec.15. - 1.2.1
+  "q-benchmark" expanded to measure one SEEK time to end of 2M file
+  "y-linediag" expanded to handle SRQ, if available
+  "b-showmem" expanded to read drive mem -> host mem function, modified
+    layout / VIC20 for readable output
+  Added STatus clear to drive memory read function
+  "a-detect" VIC20: added extra "PRESS SPACE" for readable output
+  "h-recvtime1b" VIC20: transfer 112 BYTEs
+
+2023.Oct.10. - 1.2.0
+  "vcpumacros-asl.asm" modified (added VCPU R2, if required)
+  "vcpumacros-acme.asm" modified (added VCPU R2, if required)
+  "s-40trktst": 40 track .d64 image block R/W test added (New!)
+  "r-lstresstst": waits for button released on exit
+  "commerrchannel"/"sd2i_recvanswer" corrected
+  "getvcpustatus" expanded to VCPU R2 extras, print SR in binary,
+    modified register printing
+  "checkvcpusupport" expanded to save VCPU parameters for later use
+  "c-printio" expanded to handle IO size dynamically
+  "y-linediag" actualized
+  "z-vcpuctst" added test #26 (VCPU R2 extras, SKIP on R1)
+  New "autoswap.lst" file for test images
+  All tests: compiled drivecodes renamed from .prg to .bin (these
+    binaries not regular CBM prg-s)
+  All tests: replace "=" with "==" in IF statements (cosmetic change)
+
+----------
+2023.Jun.10. - 1.1.1
+  "vcpumacros-asl.asm" modified (missing I/O change: memiosize, unitno)
+  "vcpumacros-acme.asm" added
+  All test: BASIC list linking corrected
+  "b-showmem": VCPU status print added
+  "e-sr1b-pio", "i-sr2b-pio": VIC20 print modified
+  "r-lstresstst": Lines Stress test added (New!)
+  "z-vcpuctst": Test #25 added (memory & I/O boundary check)
+
+2023.Mar.20. - 1.1.0
+  BTASC VCPU command deprecated
+  "vcpumacros-asl.asm" modified (remove BTASC, add converter peripheral)
+  "o-diskimgs", "p-autoswap", "z-vcputst" modified
+  "checkvcpusupport" extended (bus type, I/O size)
+  Put ID string to all executable
+  Main makefile modified: stop on sub-make error
+
+----------
+2021.Nov.20. - 1.0.2
+  "q-benchmark" modified
+
+2021.Nov.20. - 1.0.1
+  "vcpumacros.asl", "q-benchmark" modified
+
+2021.Oct.11. - 1.0
+  Initial release
+------------------------------------------------------------------------

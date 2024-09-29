@@ -3,6 +3,7 @@
 ;---	©2021.08.28.+ by BSZ
 ;---	Handle Disk Images, computer side
 ;------------------------------------------------------------------------------
+	INCLUDE	"_tempsyms_.inc"		;platform/name defines, generated / deleted automatically
 	INCLUDE "../common/def6502.asm"
 	INCLUDE	"../common/defines.asm"
 ;------------------------------------------------------------------------------
@@ -82,9 +83,7 @@ $$vcpuready	jsr	rom_primm
 		BYT	ascii_return,"CHANGE DIR BACK",0
 		jsr	printokerror
 
-		jsr	rom_primm
-		BYT	ascii_return,0
-$$exit		rts
+$$exit		jmp	program_exit
 
 ;---	Print OK/ERROR
 printokerror	jsr	getbytefromresults
@@ -249,15 +248,15 @@ _resultspos	BYT	0
 waitdrive	lda	#%11111111
 		sta	$$state
 $$waitcycle
-    IF target_platform = 20
+    IF target_platform == 20
 		lda	$911f			;VIA1 DRA
 		and	#%00000011
 		cmp	#%00000011
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		lda	$dd00			;CIA port for handle serial lines
 		and	#%11000000
 		cmp	#%11000000		;DAT+CLK = high?
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		lda	$01			;CPU port for handle serial lines
 		and	#%11000000
 		cmp	#%11000000		;DAT+CLK = high?
@@ -273,7 +272,7 @@ $$waitcont	cmp	$$state
 $$state		BYT	0
 ;------------------------------------------------------------------------------
 ;	Previously compiled drivecode binary:
-_drivecode	BINCLUDE "diskimgs-drive.prg"
+_drivecode	BINCLUDE "diskimgs-drive.bin"
 _drivecode_end
 ;------------------------------------------------------------------------------
 displaylevel	set	1

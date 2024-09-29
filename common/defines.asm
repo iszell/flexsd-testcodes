@@ -1,7 +1,7 @@
 ;------------------------------------------------------------------------------
 ;---	Defs:
 ;------------------------------------------------------------------------------
-def_testcodes_version	=	"1.1.0"
+def_testcodes_version	=	"1.3.0"
 ;------------------------------------------------------------------------------
 ;---	Target platform:
 ;---		20	VIC20
@@ -14,17 +14,19 @@ def_testcodes_version	=	"1.1.0"
 ;---		0: Default configuration, no any memory expansion
 ;---		3: +3K memory expansion only ($0400..$0FFF)
 ;---		8: +8K or more memory expansion ($2000..)
-    IF target_platform = 20
+    IF target_platform == 20
 vic20_setmem	=	0
     ENDIF
 ;------------------------------------------------------------------------------
 ascii_return	=	13
 ascii_down	=	17
 ascii_rvson	=	18
+ascii_del	=	20
 ascii_esc	=	27
 ascii_right	=	29
 ascii_up	=	145
 ascii_rvsoff	=	146
+ascii_scnclr	=	147
 ascii_left	=	157
 ;------------------------------------------------------------------------------
 def_drvmem_wrblocksize	=	96
@@ -46,9 +48,12 @@ rom_bsout	=	$ffd2		;chrout ($0324)
 ;------------------------------------------------------------------------------
 ;---	Platform-dependent equates:
 
-    IF target_platform = 20
+    IF target_platform == 20
 ;---	VIC20 RAM defs:
+z_stkey		=	$91		;B Stop key flag (B0=0: STOP pressed)
+z_c3po		=	$94		;B Serial: UsedBuffer
 z_time		=	$a0		;B×3 Time, High:Mid:Low
+z_r2d2		=	$a3		;B Serial: SendEOI
 z_sal		=	$ac		;B
 z_sah		=	$ad		;B Load/Save Start Address
 z_eal		=	$ae		;B
@@ -57,15 +62,18 @@ z_la		=	$b8		;B Logical File number
 z_sa		=	$b9		;B Secondary Address
 z_fa		=	$ba		;B Unit No
 z_ndx		=	$c6		;B Keyboard buffer index
+z_rvs		=	$c7		;B RVS mode
+z_qtsw		=	$d4		;B Quote switch
+z_insrt		=	$d8		;B Insert mode
 _keyd		=	$0277		;B×10 Interrupt's Keyboard buffer
 _color		=	$0286		;B Current color for character print (Active color nybble)
-      IF vic20_setmem = 0
+      IF vic20_setmem == 0
 screen_addr	=	$1e00		;Screen mem address without RAM expansion
 color_addr	=	$9600		;Color mem address
-      ELSEIF vic20_setmem = 3
+      ELSEIF vic20_setmem == 3
 screen_addr	=	$1e00		;Screen mem address in +3K
 color_addr	=	$9600		;Color mem address
-      ELSEIF vic20_setmem = 8
+      ELSEIF vic20_setmem == 8
 screen_addr	=	$1000		;Screen mem address in +8K
 color_addr	=	$9400		;Color mem address
       ELSE
@@ -82,12 +90,18 @@ rom_prend	=	$eb18		;Interrupt end
 ;---	VIC20 others:
 error_color	=	$02
 scrclr_offset	=	30
-def_blockno1	=	96
+def_blockno1	=	112
 def_blockno2	=	160
+def_blockno3	=	0
+def_blockno4	=	256
 def_rasterpos	=	68
-    ELSEIF target_platform = 64
+def_irqpersec	=	60
+    ELSEIF target_platform == 64
 ;---	C64 RAM defs:
+z_stkey		=	$91		;B Stop key flag (B7=0: STOP pressed)
+z_c3po		=	$94		;B Serial: UsedBuffer
 z_time		=	$a0		;B×3 Time, High:Mid:Low
+z_r2d2		=	$a3		;B Serial: SendEOI
 z_sal		=	$ac		;B
 z_sah		=	$ad		;B Load/Save Start Address
 z_eal		=	$ae		;B
@@ -96,6 +110,9 @@ z_la		=	$b8		;B Logical File number
 z_sa		=	$b9		;B Secondary Address
 z_fa		=	$ba		;B Unit No
 z_ndx		=	$c6		;B Keyboard buffer index
+z_rvs		=	$c7		;B RVS mode
+z_qtsw		=	$d4		;B Quote switch
+z_insrt		=	$d8		;B Insert mode
 _keyd		=	$0277		;B×10 Interrupt's Keyboard buffer
 _color		=	$0286		;B Current color for character print (Active color nybble)
 screen_addr	=	$0400		;Screen mem address
@@ -115,20 +132,31 @@ def_vicbank	=	0		;Selected VIC BANK
 def_cia_vicbank	=	%00000100 + ((def_vicbank ! 3) & 3)	;CIA register content
 def_blockno1	=	144
 def_blockno2	=	216
+def_blockno3	=	0
+def_blockno4	=	256
 def_rasterpos	=	48
-    ELSEIF target_platform = 264
+def_irqpersec	=	60
+    ELSEIF target_platform == 264
 ;---	C16 / C116 / plus/4 RAM defs:
+z_stkey		=	$91		;B Stop key flag (B7=0: STOP pressed)
+z_c3po		=	$94		;B Serial: UsedBuffer
 z_sal		=	$9b		;B
 z_sah		=	$9c		;B Load/Save Start Address
 z_eal		=	$9d		;B
 z_eah		=	$9e		;B Load/Save End Address
 z_time		=	$a3		;B×3 Time, High:Mid:Low
+z_r2d2		=	$a6		;B Serial: SendEOI
 z_la		=	$ac		;B Logical File number
 z_sa		=	$ad		;B Secondary Address
 z_fa		=	$ae		;B Unit No
+z_rvs		=	$c2		;B RVS mode
+z_qtsw		=	$cb		;B Quote switch
+z_insrt		=	$cf		;B Insert mode
 z_ndx		=	$ef		;B Keyboard buffer index
 _keyd		=	$0527		;B×10 Interrupt's Keyboard buffer
 _color		=	$053b		;B Current color for character print (Active attribute BYTE)
+_kyndx		=	$055d		;B Function key: length
+_keyidx		=	$055e		;B Function key: index
 color_addr	=	$0800		;Color mem address
 screen_addr	=	$0c00		;Screen mem address
 ;---	C16 / C116 / plus/4 ROM entrys:
@@ -146,10 +174,16 @@ error_color	=	$32
 scrclr_offset	=	64
 def_blockno1	=	224
 def_blockno2	=	256
+def_blockno3	=	0
+def_blockno4	=	256
 def_rasterpos	=	311
-    ELSEIF target_platform = 128
+def_irqpersec	=	50
+    ELSEIF target_platform == 128
 ;---	C128 RAM defs:
+z_stkey		=	$91		;B Stop key flag (B7=0: STOP pressed)
+z_c3po		=	$94		;B Serial: UsedBuffer
 z_time		=	$a0		;B×3 Time, High:Mid:Low
+z_r2d2		=	$a3		;B Serial: SendEOI
 z_sal		=	$ac		;B
 z_sah		=	$ad		;B Load/Save Start Address
 z_eal		=	$ae		;B
@@ -158,8 +192,14 @@ z_la		=	$b8		;B Logical File number
 z_sa		=	$b9		;B Secondary Address
 z_fa		=	$ba		;B Unit No
 z_ndx		=	$d0		;B Keyboard buffer index
-_keyd		=	$034a		;B×10 Interrupt's Keyboard buffer
+_kyndx		=	$d1		;B Function key: length
+_keyidx		=	$d2		;B Function key: index
+z_shflag	=	$d3		;B Shift keys flag (B0: Shift, B1: C=, B2: Control, ...)
 _color		=	$f1		;B Current color for character print (Active color nybble)
+z_rvs		=	$f3		;B RVS mode
+z_qtsw		=	$f4		;B Quote switch
+z_insrt		=	$f5		;B Insert mode
+_keyd		=	$034a		;B×10 Interrupt's Keyboard buffer
 screen_addr	=	$0400		;Screen mem address
 color_addr	=	$d800		;Color mem address
 ;---	C128 ROM entrys:
@@ -172,6 +212,7 @@ rom_ser_dathi	=	$e557		;Serial line DAT to HiZ
 rom_nirq	=	$fa65		;Original Interrupt routine
 rom_prend	=	$ff33		;Interrupt end
 rom_primm	=	$ff7d		;Print Immediate
+rom_spin_spout	=	$ff47		;Fast serial: configure input/output
 ;---	C128 others:
 error_color	=	$0a
 scrclr_offset	=	64
@@ -179,7 +220,10 @@ def_vicbank	=	0		;Selected VIC BANK
 def_cia_vicbank	=	%00000100 + ((def_vicbank ! 3) & 3)	;CIA register content
 def_blockno1	=	144
 def_blockno2	=	216
+def_blockno3	=	256
+def_blockno4	=	256
 def_rasterpos	=	48
+def_irqpersec	=	50
     ELSE
 	ERROR "No (correct) target_platform specified"
     ENDIF

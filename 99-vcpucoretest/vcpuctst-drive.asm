@@ -4,6 +4,7 @@
 ;---	VCPU core test codes - drive side
 ;------------------------------------------------------------------------------
 	INCLUDE "../common/def6502.asm"
+vcpu_revno = 2
 	INCLUDE	"../common/vcpumacros-asl.asm"
 ;------------------------------------------------------------------------------
 def_drivecodestart	=	$0200
@@ -89,7 +90,7 @@ dc_test3_codeend	=	* - def_offset
 	SHARED	dc_t3_data3
 	SHARED	dc_t3_tstbs
 ;------------------------------------------------------------------------------
-;---	Test4: SPH/ZPH set test
+;---	Test4: SPH/ZPH set test, memory, command and error channel region tests
 
 dc_t4_testsp	=	$0300
 dc_t4_testzp	=	$0200
@@ -115,6 +116,14 @@ _test4_good5	lda	$ffff
 _test4_good6	sta	$ffff
 _test4_bad3	lda	$ff00
 _test4_bad4	sta	$ff00
+_test4_good7	lda	vcpu_commandbuffer+$fe
+_test4_good8	sta	vcpu_commandbuffer+$fe
+_test4_bad5	lda	vcpu_commandbuffer+$ff
+_test4_bad6	sta	vcpu_commandbuffer+$ff
+_test4_good9	lda	vcpu_errorbuffer+$fe
+_test4_good10	sta	vcpu_errorbuffer+$fe
+_test4_bad7	lda	vcpu_errorbuffer+$ff
+_test4_bad8	sta	vcpu_errorbuffer+$ff
 		break	def_exitcode
 	DEPHASE
 dc_test4_codeend	=	* - def_offset
@@ -129,6 +138,14 @@ dc_test4_good5		=	_test4_good5 - def_drivecodestart + dc_test4_codestart
 dc_test4_good6		=	_test4_good6 - def_drivecodestart + dc_test4_codestart
 dc_test4_bad3		=	_test4_bad3 - def_drivecodestart + dc_test4_codestart
 dc_test4_bad4		=	_test4_bad4 - def_drivecodestart + dc_test4_codestart
+dc_test4_good7		=	_test4_good7 - def_drivecodestart + dc_test4_codestart
+dc_test4_good8		=	_test4_good8 - def_drivecodestart + dc_test4_codestart
+dc_test4_good9		=	_test4_good9 - def_drivecodestart + dc_test4_codestart
+dc_test4_good10		=	_test4_good10 - def_drivecodestart + dc_test4_codestart
+dc_test4_bad5		=	_test4_bad5 - def_drivecodestart + dc_test4_codestart
+dc_test4_bad6		=	_test4_bad6 - def_drivecodestart + dc_test4_codestart
+dc_test4_bad7		=	_test4_bad7 - def_drivecodestart + dc_test4_codestart
+dc_test4_bad8		=	_test4_bad8 - def_drivecodestart + dc_test4_codestart
 	SHARED	dc_t4_testsp
 	SHARED	dc_t4_testzp
 	SHARED	dc_test4_codestart
@@ -144,6 +161,14 @@ dc_test4_bad4		=	_test4_bad4 - def_drivecodestart + dc_test4_codestart
 	SHARED	dc_test4_good6
 	SHARED	dc_test4_bad3
 	SHARED	dc_test4_bad4
+	SHARED	dc_test4_good7
+	SHARED	dc_test4_good8
+	SHARED	dc_test4_good9
+	SHARED	dc_test4_good10
+	SHARED	dc_test4_bad5
+	SHARED	dc_test4_bad6
+	SHARED	dc_test4_bad7
+	SHARED	dc_test4_bad8
 ;------------------------------------------------------------------------------
 ;---	Test5: SP + Txx + Pxx tests
 
@@ -1246,7 +1271,213 @@ dc_test24_codeend	=	* - def_offset
 	SHARED	dc_t24_results
 	SHARED	dc_t24_results_end
 ;------------------------------------------------------------------------------
+;---	Test25: Memory boundary tests
+
+dc_test25_codestart	=	* - def_offset
+	PHASE	def_drivecodestart
+dc_t25_start
+		ldzph	hi(dc_t25_zistr)
+		ldy	#lo(dc_t25_zistr)
+		ldx	#dc_t25_zistr_e-dc_t25_zistr
+		break	vcpu_syscall_directcommand_mem
+		cmp	#0			;OK?
+		beq	$$okay
+$$exit		break	vcpu_syscall_exit_remain
+$$okay		cpx	#5			;Answer length: 5 BYTE?
+		bcc	$$exit			;If less, maybe older firmware, exit
+		ldx	vcpu_errorbuffer+1	;Command-channel length
+		stx	dc_t25_p8+1
+		stx	dc_t25_p9+1
+		dex
+		stx	dc_t25_p7+1
+		ldx	vcpu_errorbuffer+2	;Error-channel length
+		stx	dc_t25_p11+1
+		stx	dc_t25_p12+1
+		dex
+		stx	dc_t25_p10+1
+
+		lda	vcpu_memiosize		;I/O + Memory size
+		and	#%00011111		;Memory size remain
+		cmp	vcpu_errorbuffer+3	;Equal?
+		bne	$$exit			;If not, error
+		sta	dc_t25_p2+2
+		sta	dc_t25_p3+2
+		tax
+		dex
+		stx	dc_t25_p1+2
+
+		lda	vcpu_memiosize		;I/O + Memory size
+		rol	a
+		rol	a
+		rol	a
+		rol	a			;B765 -> B210
+		and	#%00000111		;I/O ~size remain (3 = $10)
+		tax
+		lda	dc_t25_iosizes,x	;2,4,8,16,32,64,128,lo(256-1)
+		cmp	vcpu_errorbuffer+4
+		bcc	$$exit			;If not less or equal, error, exit
+		ldx	vcpu_errorbuffer+4	;I/O area last valid address
+		stx	dc_t25_p4+1
+		inx
+		stx	dc_t25_p5+1
+		stx	dc_t25_p6+1
+
+dc_t25_p1	lda	$ffff			;<- previously set address: read last valid memory
+dc_t25_p2	lda	$ff00			;<- previously set address: read first invalid memory
+dc_t25_p3	sta	$ff00			;<- previously set address: write first invalid memory
+dc_t25_p4	lda	vcpu_iobase+$ff		;<- previously set address: read last valid I/O
+dc_t25_p5	lda	vcpu_iobase+$ff		;<- previously set address: read first invalid I/O
+dc_t25_p6	sta	vcpu_iobase+$ff		;<- previously set address: write first invalid I/O
+dc_t25_p7	lda	vcpu_commandbuffer+$ff	;<- previously set address: read last valid command buffer byte
+dc_t25_p8	lda	vcpu_commandbuffer+$ff	;<- previously set address: read first invalid command buffer byte
+dc_t25_p9	sta	vcpu_commandbuffer+$ff	;<- previously set address: write first invalid command buffer byte
+dc_t25_p10	lda	vcpu_errorbuffer+$ff	;<- previously set address: read last valid error buffer byte
+dc_t25_p11	lda	vcpu_errorbuffer+$ff	;<- previously set address: read first invalid error buffer byte
+dc_t25_p12	sta	vcpu_errorbuffer+$ff	;<- previously set address: write first invalid error buffer byte
+dc_t25_p13	break	def_exitcode
+
+dc_t25_iosizes	BYT	2,4,8,16,32,64,128,lo(256-1)
+dc_t25_zistr	BYT	"ZI"
+dc_t25_zistr_e
+
+	DEPHASE
+dc_test25_codeend	=	* - def_offset
+
+	SHARED	dc_test25_codestart
+	SHARED	dc_test25_codeend
+	SHARED	dc_t25_start
+	SHARED	dc_t25_p1
+	SHARED	dc_t25_p2
+	SHARED	dc_t25_p3
+	SHARED	dc_t25_p4
+	SHARED	dc_t25_p5
+	SHARED	dc_t25_p6
+	SHARED	dc_t25_p7
+	SHARED	dc_t25_p8
+	SHARED	dc_t25_p9
+	SHARED	dc_t25_p10
+	SHARED	dc_t25_p11
+	SHARED	dc_t25_p12
+	SHARED	dc_t25_p13
 ;------------------------------------------------------------------------------
+;---	Test26: VCPU R2 USER1 / USER2 / USERR
+;---			TYXxx / TxxYX commands tests
+
+dc_test26_codestart	=	* - def_offset
+dc_t26_stack		=	def_drivecodestart + $ff
+	PHASE	def_drivecodestart
+dc_t26_start
+		ldsph	hi(dc_t26_stack)
+		ldx	#lo(dc_t26_stack)
+		txs
+		ldx	#$00
+		ldy	#$00
+		jsr	dc_t26_setallvect
+		break	def_exitcode
+		ldx	#$ff
+		lda	vcpu_memiosize
+		and	#%00011111
+		tay
+		dey
+		jsr	dc_t26_setallvect
+		break	def_exitcode
+		inx
+		iny
+		jsr	dc_t26_setallvect
+
+		ldx	#lo(dc_t26_sub1)
+		ldy	#hi(dc_t26_sub1)
+		tyxu1				;USER1 vector set (U1R)
+		ldx	#lo(dc_t26_sub2)
+		ldy	#hi(dc_t26_sub2)
+		tyxu2				;USER2 vector set (U2R)
+		break	def_exitcode
+
+		lda	#$55
+dc_t26_call1	user1				;Call USER1
+dc_t26_ret1	break	def_exitcode
+
+		lda	#$5a
+dc_t26_call2	user2				;Call USER2
+dc_t26_ret2	break	def_exitcode
+
+		ldx	#$ff
+		ldy	#$ff
+		trryx				;Read RR
+dc_t26_crr	break	def_exitcode
+
+		ldx	#$ff
+		ldy	#$ff
+		tu1yx				;Read U1R
+dc_t26_cu1	break	def_exitcode
+
+		ldx	#$ff
+		ldy	#$ff
+		tu2yx				;Read U2R
+dc_t26_cu2	break	def_exitcode
+
+		pshrr				;Push RR to stack
+		ldx	#$01
+		ldy	#$01
+		tyxrr
+		pla
+		tax
+		pla
+		tay
+		pha
+		txa
+		pha
+dc_t26_s1	break	def_exitcode
+
+		ldx	#$dd
+		ldy	#$ee
+		pulrr				;Pull RR from stack
+		trryx
+dc_t26_s2	break	def_exitcode
+
+		break	0
+		break	0
+		break	0
+dc_t26_sub1	break	def_exitcode
+		asl	a
+		userr				;RETURN from USER call
+		break	0
+		break	0
+		break	0
+dc_t26_sub2	break	def_exitcode
+		eor	#%11111111
+		userr				;RETURN from USER call
+		break	0
+		break	0
+		break	0
+
+dc_t26_setallvect
+dc_t26_setrr	tyxrr				;Set RR
+dc_t26_setu1	tyxu1				;Set U1R
+dc_t26_setu2	tyxu2				;Set U2R
+		rts
+
+	DEPHASE
+dc_test26_codeend	=	* - def_offset
+
+	SHARED	dc_test26_codestart
+	SHARED	dc_test26_codeend
+	SHARED	dc_t26_stack
+	SHARED	dc_t26_start
+	SHARED	dc_t26_call1
+	SHARED	dc_t26_call2
+	SHARED	dc_t26_ret1
+	SHARED	dc_t26_ret2
+	SHARED	dc_t26_sub1
+	SHARED	dc_t26_sub2
+	SHARED	dc_t26_setrr
+	SHARED	dc_t26_setu1
+	SHARED	dc_t26_setu2
+	SHARED	dc_t26_crr
+	SHARED	dc_t26_cu1
+	SHARED	dc_t26_cu2
+	SHARED	dc_t26_s1
+	SHARED	dc_t26_s2
 ;------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------

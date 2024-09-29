@@ -13,6 +13,8 @@ sd2i_sendcommand
 
 		lda	#%00000000
 		sta	z_status
+		sta	z_c3po
+		sta	z_r2d2
 		lda	z_fa			;Unit No
 		jsr	rom_listn
 		lda	#$6f			;Command channel
@@ -29,10 +31,9 @@ $$sendlen	cpy	#$ff
 ;---	Receive data from error channel:
 ;---	Y:X <- Readed bytes Memory address
 ;---	A   <- Maximum number of readed bytes
-;---	Y   -> Number of readed bytes
+;---	Y   -> Number of readed bytes (or maximum, if more data received)
 
 sd2i_recvanswer
-
 		sta	$$recvlen+1
 		stx	$$recvaddr+1
 		sty	$$recvaddr+2
@@ -48,10 +49,10 @@ sd2i_recvanswer
 $$readdata	bit	z_status
 		bvs	$$datasend
 		jsr	rom_acptr
-$$recvaddr	sta	$ffff,y
 $$recvlen	cpy	#$ff
-		beq	$$readdata
+		beq	$$readdata		;If too much data received, not store
+$$recvaddr	sta	$ffff,y
 		iny
-		bne	$$readdata
+		bne	$$readdata		;~BRA
 $$datasend	jmp	rom_untlk
 ;------------------------------------------------------------------------------

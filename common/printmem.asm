@@ -1,7 +1,7 @@
 ;------------------------------------------------------------------------------
 ;---	Print memory contents
 ;------------------------------------------------------------------------------
-    IF target_platform = 20
+    IF target_platform == 20
 bytesofline	set	4
     ELSE
 bytesofline	set	8
@@ -46,7 +46,7 @@ $$printline	jsr	rom_primm
 		lda	_displayaddr+0
 		jsr	mon_puthex
 		ldx	$$printno
-    IF target_platform = 20
+    IF target_platform == 20
 		lda	#' '
 		jsr	rom_bsout
     ENDIF
@@ -68,7 +68,7 @@ $$printdatas
 		beq	$$printascii
 		tax
 $$printtrimdat	jsr	rom_primm
-    IF target_platform = 20
+    IF target_platform == 20
 		BYT	"  ",0
     ELSE
 		BYT	"   ",0

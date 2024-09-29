@@ -13,6 +13,12 @@ displev		SET	displaylevel
 
 sd2i_checkvcpusupport
 
+		lda	#0
+		sta	_vcpu_version
+		sta	_vcpu_commandch_size
+		sta	_vcpu_errorch_size
+		sta	_vcpu_memory_size
+		sta	_vcpu_ioarea_size
 		ldx	#lo($$chkcomm)
 		ldy	#hi($$chkcomm)
 		lda	#$$chkcomm_end-$$chkcomm
@@ -30,11 +36,23 @@ sd2i_checkvcpusupport
     ENDIF
 		sec					;SEC: No VCPU support
 		rts
-$$vcpuready
+
+$$vcpuready	sta	_vcpu_version			;Save VCPU version code
+		cpy	#5
+		bcc	$$noioarea
+		ldx	$$infodata+4
+		inx
+		stx	_vcpu_ioarea_size
+$$noioarea	ldx	$$infodata+1
+		stx	_vcpu_commandch_size
+		ldx	$$infodata+2
+		stx	_vcpu_errorch_size
+		ldx	$$infodata+3
+		stx	_vcpu_memory_size
+
     IF displev < 1
-		sty	$$answerlength+1		;Modify the number of received BYTEs
 		jsr	rom_primm
-		BYT	ascii_return,"VCPU VERSION:",0
+		BYT	ascii_return,"VCPU VERSION:R",0
 		and	#%00011111			;Only version number remain
 		tax
 		lda	#0
@@ -45,33 +63,35 @@ $$vcpuready
 		jsr	$$printbustype
 		jsr	rom_primm
 		BYT	ascii_return,"  COMMAND B. SIZE:",0
-		ldx	$$infodata+1
+		ldx	_vcpu_commandch_size
 		lda	#0
 		jsr	bas_linprt
 		jsr	rom_primm
 		BYT	ascii_return,"  ERROR B. SIZE:",0
-		ldx	$$infodata+2
+		ldx	_vcpu_errorch_size
 		lda	#0
 		jsr	bas_linprt
 		jsr	rom_primm
 		BYT	ascii_return,"  BLOCK BUFFERS NO:",0
-		ldx	$$infodata+3
+		ldx	_vcpu_memory_size
 		lda	#0
 		jsr	bas_linprt
 		jsr	rom_primm
 		BYT	ascii_return,"  I/O AREA SIZE:",0
-$$answerlength	lda	#$00				;<- DRIVE's answer length, modified previously
-		cmp	#5
-		bcc	$$noioarea
-		ldx	$$infodata+4
-		inx
+		ldx	_vcpu_ioarea_size
+		beq	$$unknioarea
 		lda	#0
 		jsr	bas_linprt
 		jmp	$$ready
-$$noioarea	jsr	rom_primm
+
+$$unknioarea	jsr	rom_primm
 		BYT	"UKNW",0
     ENDIF
-$$ready		lda	$$infodata+3			;VCPU memory size
+$$ready		lda	_vcpu_ioarea_size
+		bne	$$iosizeset
+		lda	#16
+		sta	_vcpu_ioarea_size		;Old fw not report I/O area size, 16 set
+$$iosizeset	lda	_vcpu_memory_size		;VCPU memory size
 		clc					;CLC: VCPU support ok
 		rts
 
@@ -126,6 +146,12 @@ $$chkcomm	BYT	"ZI"
 $$chkcomm_end
 $$infodata	BYT	0,0,0,0,0,0,0,0
 $$infodata_end
+
+_vcpu_version		BYT	0
+_vcpu_commandch_size	BYT	0
+_vcpu_errorch_size	BYT	0
+_vcpu_memory_size	BYT	0
+_vcpu_ioarea_size	BYT	0
 ;------------------------------------------------------------------------------
 displev		SET	0
 ;------------------------------------------------------------------------------

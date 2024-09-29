@@ -22,6 +22,18 @@ $$cycle		lda	vcpu_hid			;B76: Buttons, B10: LEDs
 		rol	a
 		rol	a				;B76 -> B10
 		sta	vcpu_hid
+
+;	UART debug test
+;	  (Only useful when the drive firmware compiled in uart debug mode,
+;	   otherwise ineffective)
+		clv
+		lda	vcpu_dbguart
+		bvc	$$cycle
+		sta	vcpu_dbguart
+		cmp	#13
+		bne	$$cycle
+		lda	#10
+		sta	vcpu_dbguart
 		jmp	$$cycle
 ;------------------------------------------------------------------------------
 	SHARED	drivecode_start

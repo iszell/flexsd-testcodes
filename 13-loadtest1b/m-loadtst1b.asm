@@ -2,13 +2,19 @@
 ;---	SD2IEC test codes
 ;---	©2021.08.12.+ by BSZ
 ;---	File Load test, 1bit, computer side
+;---	240325+: Testfile changed
 ;------------------------------------------------------------------------------
+	INCLUDE	"_tempsyms_.inc"		;platform/name defines, generated / deleted automatically
 	INCLUDE "../common/def6502.asm"
 	INCLUDE	"../common/defines.asm"
 ;------------------------------------------------------------------------------
 	INCLUDE	"../common/header.asm"
 	INCLUDE	"../common/len_chks.asm"
 	INCLUDE	"loadtst1b-drive.inc"
+;------------------------------------------------------------------------------
+;---	Actual testfile
+megafile_length	=	meg1file_length
+megafile_chks	=	meg1file_chks
 ;------------------------------------------------------------------------------
 		jsr	rom_primm
 		BYT	ascii_return,ascii_return,ascii_return
@@ -31,17 +37,17 @@ $$sd2iecpresent	jsr	rom_primm
 		jmp	$$exit
 $$vcpuready
 
-    IF target_platform = 20
+    IF target_platform == 20
 		lda	#%11011100		;Release CLK, DAT
 		sta	$912c
 		lda	#%01111111
 		sta	$911f			;Release ATN
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		lda	#def_cia_vicbank | %00000000	;Release ATN, CLK, DAT
 		sta	$dd00
 		lda	#%00111111			;Only DAT/CLK in input
 		sta	$dd02
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		lda	#%00001000		;Cas.Mtr Off, Release ATN, CLK, DAT
 		sta	$01
 		lda	#%00011111		;Dirty Hack: Datasette RD line output and drive LOW
@@ -78,13 +84,13 @@ $$loaderror	jsr	rom_primm
 		BYT	" !!!LOAD ERROR!!!",0
 
 $$statexit
-    IF target_platform = 20
+    IF target_platform == 20
 		lda	#%11011100		;Release CLK, DAT
 		sta	$912c
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		lda	#def_cia_vicbank | %00000000	;Release CLK, DAT, ATN
 		sta	$dd00
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		lda	#%00001111		;Restore DDR
 		sta	$00
 		lda	#%00001000		;Cas.Mtr Off, Release CLK, DAT, ATN
@@ -97,7 +103,7 @@ $$statexit
 		jsr	sd2i_printstatus
 		lda	#0
 		sta	z_ndx			;Clear keyboard buffer
-$$exit		rts
+$$exit		jmp	program_exit
 ;------------------------------------------------------------------------------
 ;---	Loader:
 ;---	A <- B7=0: calc chksum, =1: no calc chksum, B6=0: 254, =1: 256 BYTEs
@@ -125,15 +131,15 @@ $$loadcycle	lda	_rtsopcode		;RTS
 		sta	$$bytereceivr_e		;cycle changed to one-run
 
 
-    IF target_platform = 20
+    IF target_platform == 20
 		ldy	#%11011100		;Release CLK (preparation)
 $$waitnotbusy	lda	$911f			;VIA1 DRA
 		and	#%00000011
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		ldy	#def_cia_vicbank | %00000000	;Release CLK (preparation)
 $$waitnotbusy	lda	$dd00				;CIA port for handle serial lines
 		and	#%11000000
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		ldy	#%00001000		;Release CLK (preparation)
 $$waitnotbusy	lda	$01			;CPU port for handle serial lines
 		and	#%11000000
@@ -157,7 +163,7 @@ $$waitnotbusy	lda	$01			;CPU port for handle serial lines
 
 		ldx	#0
 $$bytereceivr_c
-    IF target_platform = 20
+    IF target_platform == 20
 		stx	z_eal			;X save
 		ldx	#%11011110		;Drive CLK (preparation)
 
@@ -203,7 +209,7 @@ $$bytereceivr_c
 		ror	z_eah
 		ldx	z_eal			;X restore
 		lda	z_eah			;Read received BYTE
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		stx	z_eal				;X save
 		ldx	#def_cia_vicbank | %00010000	;Drive CLK (preparation)
 
@@ -232,7 +238,7 @@ $$bytereceivr_c
 		eor	$dd00				;Read B7
 		sty	$dd00				;Release CLK
 		ldx	z_eal				;X restore
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		stx	z_eal			;X save
 		ldx	#%00001010		;Drive CLK (preparation)
 
@@ -358,17 +364,17 @@ datainit	lda	#0
 ;------------------------------------------------------------------------------
 ;---	Interrupt routine for time measure:
 interrupt
-    IF target_platform = 20
+    IF target_platform == 20
 		inc	$900f			;Change border color
 		bit	$9124			;Clear Interrupt flag
-    ELSEIF target_platform = 64
+    ELSEIF target_platform == 64
 		inc	$d020			;Change border color
 		bit	$dc0d			;Clear interrupt flag
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		inc	$ff19			;Change border color
 		lda	#$ff
 		sta	$ff09			;Clear interrupt flag
-    ELSEIF target_platform = 128
+    ELSEIF target_platform == 128
 		inc	$d020			;Change border color
 		lda	$d019
 		sta	$d019			;Clear interrupt flag
@@ -377,11 +383,11 @@ interrupt
 		bne	$$interrupt_end
 		inc	_time+1
 $$interrupt_end
-    IF target_platform = 20
+    IF target_platform == 20
 		dec	$900f			;Restore border color
-    ELSEIF (target_platform = 64) || (target_platform = 128)
+    ELSEIF (target_platform == 64) || (target_platform == 128)
 		dec	$d020			;Restore border color
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 		dec	$ff19			;Restore border color
     ENDIF
 		jmp	rom_prend
@@ -472,7 +478,7 @@ downloadstartcode
 ;	Previously compiled drivecode binary:
 _drivecode
 _modebits
-	BINCLUDE "loadtst1b-drive.prg"
+	BINCLUDE "loadtst1b-drive.bin"
 _drivecode_end
 ;------------------------------------------------------------------------------
 _time		BYT	0,0

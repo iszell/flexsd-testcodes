@@ -3,6 +3,7 @@
 ;---	©2021.07.12.+ by BSZ
 ;---	Buttons + LEDs, computer side
 ;------------------------------------------------------------------------------
+	INCLUDE	"_tempsyms_.inc"		;platform/name defines, generated / deleted automatically
 	INCLUDE "../common/def6502.asm"
 	INCLUDE	"../common/defines.asm"
 ;------------------------------------------------------------------------------
@@ -41,10 +42,15 @@ $$vcpuready	jsr	rom_primm
 		jsr	sd2i_execmemory_simple
 
 		jsr	rom_primm
-		BYT	ascii_return,ascii_return,"PREV/NEXT TO LEDS"
-		BYT	ascii_return,"C/V: CLK ASSERT/REL"
-		BYT	ascii_return,"D/F: DAT ASSERT/REL"
-		BYT	ascii_return,ascii_return,"  -SPACE TO EXIT-",0
+		BYT	ascii_return,ascii_return,"# ",ascii_rvson,"[PREV]",ascii_rvsoff,"/",ascii_rvson,"[NEXT]",ascii_rvsoff,": LEDS"
+    IF target_platform == 20
+		BYT	ascii_return,"# ",ascii_rvson,"[C]",ascii_rvsoff,"/",ascii_rvson,"[V]",ascii_rvsoff,": CLK AS/RE"
+		BYT	ascii_return,"# ",ascii_rvson,"[D]",ascii_rvsoff,"/",ascii_rvson,"[F]",ascii_rvsoff,": DAT AS/RE"
+    ELSE
+		BYT	ascii_return,"# ",ascii_rvson,"[C]",ascii_rvsoff,"/",ascii_rvson,"[V]",ascii_rvsoff,": CLK ASSERT/REL"
+		BYT	ascii_return,"# ",ascii_rvson,"[D]",ascii_rvsoff,"/",ascii_rvson,"[F]",ascii_rvsoff,": DAT ASSERT/REL"
+    ENDIF
+		BYT	ascii_return,"# ",ascii_rvson,"[SPACE]",ascii_rvsoff,": EXIT",0
 $$waitcycle	jsr	wait_keypress
 		cmp	#'C'
 		bne	$$notc
@@ -67,19 +73,17 @@ $$notf		cmp	#' '
 		jsr	rom_ser_clkhi
 		jsr	rom_ser_dathi
 		jsr	rom_primm
-		BYT	ascii_up,ascii_return,"EXIT, GET DRV STATUS:",ascii_return,0
+		BYT	ascii_return,ascii_return,"EXIT, GET DRV STATUS:",ascii_return,0
 		jsr	sd2i_printstatus
 		jsr	rom_primm
 		BYT	ascii_return,"('97,VCPU ERROR,100,04' IS OK.)",ascii_return,0
 		jsr	rom_primm
 		BYT	ascii_return,"VCPU STATUS:",0
 		jsr	sd2i_getvcpustatus
-		jsr	rom_primm
-		BYT	ascii_return,0
-$$exit		rts
+$$exit		jmp	program_exit
 
 ;	Previously compiled drivecode binary:
-$$drivecode	BINCLUDE "buttled-drive.prg"
+$$drivecode	BINCLUDE "buttled-drive.bin"
 $$drivecode_end
 ;------------------------------------------------------------------------------
 displaylevel	set	1

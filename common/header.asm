@@ -1,39 +1,42 @@
 ;------------------------------------------------------------------------------
 ;---	BASIC header (and others)
 ;------------------------------------------------------------------------------
-    IF target_platform = 20
+    IF target_platform == 20
+      IF vic20_setmem == 0
 targetstring	=	"VIC20"
-      IF vic20_setmem = 0
 start_addr	=	$1001
-      ELSEIF vic20_setmem = 3
+      ELSEIF vic20_setmem == 3
+targetstring	=	"V20+3"
 start_addr	=	$0401
-      ELSEIF vic20_setmem = 8
+      ELSEIF vic20_setmem == 8
+targetstring	=	"V20+8"
 start_addr	=	$1201
       ELSE
 	ERROR "No correct VIC20 memory size definied!"
       ENDIF
-    ELSEIF target_platform = 64
+    ELSEIF target_platform == 64
 targetstring	=	"C64"
 start_addr	=	$0801
-    ELSEIF target_platform = 264
+    ELSEIF target_platform == 264
 targetstring	=	"C264"
 start_addr	=	$1001
-    ELSEIF target_platform = 128
+    ELSEIF target_platform == 128
 targetstring	=	"C128"
 start_addr	=	$1c01
     ENDIF
 
 	ORG	start_addr - 2
 		ADR	start_addr
-		ADR	$$basend, 2023
+		ADR	$$basend, 2024
 		BYT	$9e
 		BYT	$30 + ((start_continue # 10000) / 1000)
 		BYT	$30 + ((start_continue # 1000) / 100)
 		BYT	$30 + ((start_continue # 100) / 10)
 		BYT	$30 + ((start_continue # 10) / 1)
-$$basend	BYT	0,0,0
+		BYT	0
+$$basend	BYT	0,0
 
-    IF (target_platform = 20) || (target_platform = 64)
+    IF (target_platform == 20) || (target_platform == 64)
 ;	PRIMM: VIC20/C64: no KERNAL PRint IMMediate:
 rom_primm	pha
 		tya
@@ -88,8 +91,20 @@ $$ltoasc	and	#%00001111
 $$ltoasc_nc	adc	#$30			;0..9 -> "0".."9", A..F -> "A".."F"
 		rts
     ENDIF
+;	Print exit string:
+program_exit	jsr	rom_primm
+    IF (target_platform == 20)
+		BYT	ascii_return,"-- '",prg_name,"' END",0
+    ELSE
+		BYT	ascii_return,"--- TEST '",prg_name,"' END.",0
+    ENDIF
+		rts
 ;	Print ID string:
 start_continue	jsr	rom_primm
 		BYT	ascii_return,ascii_return,"VCPU TST V",def_testcodes_version
-		BYT	"/",targetstring,ascii_return,0
+		BYT	"/",targetstring
+    IF (target_platform <> 20)
+		BYT	" --- '",prg_name,"'"
+    ENDIF
+		BYT	ascii_return,0
 ;------------------------------------------------------------------------------
